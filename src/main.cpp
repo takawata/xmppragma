@@ -32,7 +32,7 @@ public:
   bool VisitVarDecl(clang::VarDecl *vdecl){
     std::string name = vdecl->getName().str();
     clang::Expr::EvalResult ev;
-    
+    clang::SourceLocation SL;
     if(name.find("__xmp_node") == 0){
       llvm::errs()<<"NODE"<<"\n";
       auto content = llvm::dyn_cast<clang::InitListExpr>(vdecl->getInit());
@@ -49,11 +49,19 @@ public:
 	if( content->getInit(i)->IgnoreCasts()->EvaluateAsInt(ev, ast)){
 	  llvm::errs()<<ev.Val.getInt()<<"\n";
 	}else{
-	  llvm::errs()<<"ConvErr"<<"\n";	
+	  llvm::errs()<<"ConvErr"<<"\n";
 	}
       }
-      rew.InsertTextBefore(vdecl->getBeginLoc(),
-			   "/* Pragma Node Found */");
+      SL = vdecl->getBeginLoc();
+      auto &SM = rew.getSourceMgr();
+      unsigned Line = SM.getSpellingLineNumber(SL);
+      llvm::errs()<<"Line Number"<<SM.getSpellingLineNumber(SL)<<"\n";
+      llvm::errs()<<"Column Number"<<SM.getSpellingColumnNumber(SL)<<"\n";
+      auto FID = SM.getFileID(SL);
+      clang::SourceRange SR(SM.translateLineCol(FID, Line,1),
+		     SM.translateLineCol(FID, Line,0));
+
+      rew.ReplaceText(SR,  "/* Pragma Node Found */");
       return true;
     }
     if(name.find("__xmp_align") == 0){
@@ -329,7 +337,7 @@ public:
     while(!Tok.is(clang::tok::eod)){
       PP.Lex(Tok);
     }
-    {    
+    {
       clang::SourceLocation EndLoc = Tok.getLocation();    
       llvm::errs()<<name<<"\n";
       AddVar(PP, TokenList, name, StartLoc);
@@ -351,7 +359,6 @@ public:
 			  /*DisableMacroExpansion=*/false, /*IsReinject=*/false);
 
     }
-    
     return;
   error:
     PP.Diag(Tok.getLocation(), clang::diag::err_expected)
@@ -492,7 +499,7 @@ public:
     clang::Token tempTok;
     clang::Token Tok;
     clang::tok::TokenKind expected;
-    clang::SmallVector<clang::Token,1>  TokenList;  
+    clang::SmallVector<clang::Token,1>  TokenList;
     std::vector<int> arraykind;
     std::string idstr;
     std::string name;
@@ -611,13 +618,229 @@ public:
 			  /*IsReinject=*/false);
     }
     return;
-    
   error:
     PP.Diag(Tok.getLocation(), clang::diag::err_expected) << expected;
     PP.DiscardUntilEndOfDirective();
     return;
   }
 };
+class PragmaShadowHandler: public clang::PragmaHandler{
+  int nodes;
+public:
+  PragmaShadowHandler():clang::PragmaHandler("shadow"),nodes(0){}
+  void HandlePragma(clang::Preprocessor &PP,
+		    clang::PragmaIntroducer Introducer,
+		    clang::Token &FirstTok) override{
+    clang::SmallVector<clang::Token,1>  TokenList;
+    /*array identifier, size for each dimension */
+    PP.DiscardUntilEndOfDirective();
+  };
+};
+
+class PragmaReflectHandler: public clang::PragmaHandler{
+  int nodes;
+public:
+  PragmaReflectHandler():clang::PragmaHandler("reflect"),nodes(0){}
+  void HandlePragma(clang::Preprocessor &PP,
+		    clang::PragmaIntroducer Introducer,
+		    clang::Token &FirstTok) override{
+    clang::SmallVector<clang::Token,1>  TokenList;
+    /*arrayname, pereidic?, width, orthognal? ,async id*/
+    PP.DiscardUntilEndOfDirective();
+  };
+};
+class PragmaTaskHandler: public clang::PragmaHandler{
+  int nodes;
+public:
+  PragmaTaskHandler():clang::PragmaHandler("task"),nodes(0){}
+  void HandlePragma(clang::Preprocessor &PP,
+		    clang::PragmaIntroducer Introducer,
+		    clang::Token &FirstTok) override{
+    clang::SmallVector<clang::Token,1>  TokenList;
+    clang::SourceLocation StartLoc = FirstTok.getLocation();
+    std::string name = std::string("__xmp_task")+std::to_string(nodes);
+    clang::tok::TokenKind expected;
+    clang::Token nodeTok;
+    std::string idstr;
+    clang::Token Tok;
+    nodes++;
+    PP.Lex(Tok);
+
+    if(!Tok.is(expected = clang::tok::identifier)){
+      goto error;
+    }
+    idstr = Tok.getIdentifierInfo()->getName().str();
+    if(idstr != "on"){
+      goto error;
+    }
+    PP.Lex(nodeTok);
+    if(!nodeTok.is(expected = clang::tok::identifier)){
+      goto error;
+    }
+
+    while(!Tok.is(clang::tok::eod)){
+      PP.Lex(Tok);
+    }
+    {
+      AddVar(PP, TokenList, name, StartLoc);
+      AddVoidCastToken(TokenList, nodeTok);
+      AddEndBrace(TokenList);
+      auto TokenArray = std::make_unique<clang::Token[]>(TokenList.size());
+      std::copy(TokenList.begin(), TokenList.end(), TokenArray.get());
+      PP.EnterTokenStream(std::move(TokenArray), TokenList.size(),
+			/*DisableMacroExpansion=*/false,
+			/*IsReinject=*/false);
+    }
+    return;
+  error:
+    PP.Diag(Tok.getLocation(), clang::diag::err_expected) << expected;
+    PP.DiscardUntilEndOfDirective();
+    return;
+  };
+};
+class PragmaTasksHandler: public clang::PragmaHandler{
+  int nodes;
+public:
+  PragmaTasksHandler():clang::PragmaHandler("tasks"),nodes(0){}
+  void HandlePragma(clang::Preprocessor &PP,
+		    clang::PragmaIntroducer Introducer,
+		    clang::Token &FirstTok) override{
+    clang::SmallVector<clang::Token,1>  TokenList;
+    clang::SourceLocation StartLoc = FirstTok.getLocation();
+    std::string name = std::string("__xmp_tasks")+std::to_string(nodes);
+
+    nodes++;
+    AddVar(PP, TokenList, name, StartLoc);
+    AddEndBrace(TokenList);
+    PP.DiscardUntilEndOfDirective();
+    auto TokenArray = std::make_unique<clang::Token[]>(TokenList.size());
+    std::copy(TokenList.begin(), TokenList.end(), TokenArray.get());
+    PP.EnterTokenStream(std::move(TokenArray), TokenList.size(),
+			/*DisableMacroExpansion=*/false,
+			/*IsReinject=*/false);
+  };
+};
+
+class PragmaWaitAsyncHandler: public clang::PragmaHandler{
+  int nodes;
+public:
+  PragmaWaitAsyncHandler():clang::PragmaHandler("wait_async"),nodes(0){}
+  void HandlePragma(clang::Preprocessor &PP,
+		    clang::PragmaIntroducer Introducer,
+		    clang::Token &FirstTok) override{
+    clang::SmallVector<clang::Token,1>  TokenList;
+    /*Asyncid, node or template ref*/
+    PP.DiscardUntilEndOfDirective();
+  };
+};
+
+class PragmaGmoveHandler: public clang::PragmaHandler{
+  int nodes;
+public:
+  PragmaGmoveHandler():clang::PragmaHandler("gmove"),nodes(0){}
+  void HandlePragma(clang::Preprocessor &PP,
+		    clang::PragmaIntroducer Introducer,
+		    clang::Token &FirstTok) override{
+    clang::SmallVector<clang::Token,1>  TokenList;
+    /*in|out|corrective, async id*/
+    PP.DiscardUntilEndOfDirective();
+    /*Parse next statement should be parsed*/
+  };
+};
+
+class PragmaBcastHandler: public clang::PragmaHandler{
+  int nodes;
+public:
+  PragmaBcastHandler():clang::PragmaHandler("bcast"),nodes(0){}
+  void HandlePragma(clang::Preprocessor &PP,
+		    clang::PragmaIntroducer Introducer,
+		    clang::Token &FirstTok) override{
+    clang::SmallVector<clang::Token,1>  TokenList;
+    /*variables srcnoderef, destnoderef*/
+    PP.DiscardUntilEndOfDirective();
+  };
+};
+
+
+class PragmaReductionHandler: public clang::PragmaHandler{
+  int nodes;
+public:
+  PragmaReductionHandler():clang::PragmaHandler("reduction"),nodes(0){}
+  void HandlePragma(clang::Preprocessor &PP,
+		    clang::PragmaIntroducer Introducer,
+		    clang::Token &FirstTok) override{
+    clang::SmallVector<clang::Token,1>  TokenList;
+    /*operand variable, noderef, async id.*/
+    PP.DiscardUntilEndOfDirective();
+  };
+};
+class PragmaBarrierHandler: public clang::PragmaHandler{
+  int nodes;
+public:
+  PragmaBarrierHandler():clang::PragmaHandler("barrier"),nodes(0){}
+  void HandlePragma(clang::Preprocessor &PP,
+		    clang::PragmaIntroducer Introducer,
+		    clang::Token &FirstTok) override{
+    clang::SmallVector<clang::Token,1>  TokenList;
+    /*node or template ref*/
+    PP.DiscardUntilEndOfDirective();
+  };
+
+};
+
+class PragmaReduceShadowHandler: public clang::PragmaHandler{
+  int nodes;
+public:
+  PragmaReduceShadowHandler():clang::PragmaHandler("reduce_shadow"),nodes(0){}
+  void HandlePragma(clang::Preprocessor &PP,
+		    clang::PragmaIntroducer Introducer,
+		    clang::Token &FirstTok) override{
+    clang::SmallVector<clang::Token,1>  TokenList;
+    clang::Token Tok;
+    /*var width, orthognal, asyncid*/
+    PP.Lex(Tok);
+    if(!Tok.is(clang::tok::identifier)){
+      goto error;
+    }
+
+  error:
+    PP.DiscardUntilEndOfDirective();
+  };
+
+};
+
+class PragmaTemplateFixHandler: public clang::PragmaHandler{
+  int nodes;
+public:
+  PragmaTemplateFixHandler():clang::PragmaHandler("template_fix"),nodes(0){}
+  void HandlePragma(clang::Preprocessor &PP,
+		    clang::PragmaIntroducer Introducer,
+		    clang::Token &FirstTok) override{
+    clang::SmallVector<clang::Token,1>  TokenList;
+    /* template name, count of element ,dist format*/
+    PP.DiscardUntilEndOfDirective();
+  };
+
+};
+
+class PragmaArrayHandler: public clang::PragmaHandler{
+  int nodes;
+public:
+  PragmaArrayHandler():clang::PragmaHandler("array"),nodes(0){}
+  void HandlePragma(clang::Preprocessor &PP,
+		    clang::PragmaIntroducer Introducer,
+		    clang::Token &FirstTok) override{
+    clang::SmallVector<clang::Token,1>  TokenList;
+    /* Template ref and process*/
+    PP.DiscardUntilEndOfDirective();
+    /*
+     *Process Next Data Assignment statements,which use extended syntax
+     * That cannot be parsed by standard C parser.
+     */
+  };
+
+};
+
 
 class PragmaLoopHandler: public clang::PragmaHandler{
   int nodes;
@@ -628,6 +851,7 @@ public:
 		    clang::PragmaIntroducer Introducer,
 		    clang::Token &FirstTok) override{
     clang::Token Tok;
+    clang::Token NodeTok;
     clang::tok::TokenKind expected;
     clang::SmallVector<clang::Token,1>  TokenList;
     clang::SmallVector<clang::Token,1> LoopVarList;
@@ -652,7 +876,7 @@ public:
 	PP.Lex(Tok);
 	if(Tok.is(clang::tok::r_paren)){
 	  break;
-	}else if(Tok.is(expected = clang::tok::comma)){
+	}else if(!Tok.is(expected = clang::tok::comma)){
 	  goto error;
 	}
       }
@@ -667,8 +891,8 @@ public:
       goto error;
     }
     /* node or template ref*/
-    PP.Lex(Tok);
-    if(!Tok.is(expected = clang::tok::identifier)){
+    PP.Lex(NodeTok);
+    if(!NodeTok.is(expected = clang::tok::identifier)){
       goto error;
     }
     PP.Lex(Tok);
@@ -677,7 +901,7 @@ public:
       if(!Tok.is(expected = clang::tok::identifier)){
 	goto error;
       }
-      if(hasvarlist){
+      if(!hasvarlist){
 	LoopVarList.push_back(Tok);
       }
 
@@ -698,24 +922,112 @@ public:
       Tok.startToken();
       Tok.setKind(clang::tok::l_brace);
       TokenList.push_back(Tok);
-
+      Tok.startToken();
       /*define loop variable decl.*/
+      for(auto &&LV : LoopVarList){
+	Tok.startToken();
+	Tok.setKind(clang::tok::kw_int);
+	TokenList.push_back(Tok);
+	TokenList.push_back(LV);
+	Tok.startToken();
+	Tok.setKind(clang::tok::semi);
+	TokenList.push_back(Tok);
+      }
 
       /*Add descriptor array decl.*/
       AddVar(PP, TokenList, name, StartLoc);
+      AddTokenPtrElem(TokenList, NodeTok);
+      for(auto &&LV : LoopVarList){
+	AddTokenPtrElem(TokenList, LV);
+      }
       AddEndBrace(TokenList);
       //Scan For loop
-      int forlevel = 0;
+      expected = clang::tok::kw_for;
+      enum scanstate{wait_lparen,wait_for_rparen, wait_rparen,
+		     ignore_type, wait_ident, wait_single, none};
+      scanstate state = none;
+      int ignore = 0;
+      int level = 0;
+      int paren_level = 0;
       do{
 	PP.Lex(Tok);
-	/*for(int i=0; ...){} -> {int i; for(i=0; ...){}} */
-#if 0
-	if(Tok.is(clang::tok::kw_for)){
-	  forlevel ++;
+	if((expected != clang::tok::unknown)&&
+	   !Tok.is(expected))
+	  goto error;
+	switch(Tok.getKind()){
+	case clang::tok::kw_if:
+	case clang::tok::kw_while:
+	  if(state != wait_single){
+	    level++;
+	  }
+	  state = none;
+	  expected = clang::tok::l_paren;
+	  break;
+	case clang::tok::kw_for:
+	  if(state != wait_single){
+	    level++;
+	  }
+	  expected = clang::tok::l_paren;
+	  state = wait_lparen;
+	  break;
+	case clang::tok::l_paren:
+	  paren_level++;
+	  if(state == wait_lparen){
+	    state = ignore_type;
+	  }else {
+	    state = wait_rparen;
+	  }
+	  expected = clang::tok::unknown;
+	  break;
+	case clang::tok::r_paren:
+	  paren_level--;
+	  if(paren_level < 0){
+	    goto error;
+	  }
+	  if(paren_level == 0){
+	    if(state == wait_rparen){
+	      state = wait_single;
+	    }
+	  }
+	  expected = clang::tok::unknown;
+	  break;
+	case clang::tok::l_brace:
+	  if(state == wait_single){
+	    state = none;
+	  }else{
+	    level++;
+	  }
+	  expected = clang::tok::unknown;
+	  break;
+	case clang::tok::r_brace:
+	  level--;
+	  expected = clang::tok::unknown;
+	case clang::tok::identifier:
+	  if(state == wait_ident){
+	    ignore = 0;
+	    state = wait_rparen;
+	  }
+	  expected = clang::tok::unknown;
+	  break;
+	case clang::tok::semi:
+	  if(state == wait_single){
+	    state = none;
+	    level --;
+	  }
+	  expected = clang::tok::unknown;
+	  break;
+	default:
+	  if(state == ignore_type){
+	    ignore = 1;
+	    state = wait_ident;
+	  }
+	  expected = clang::tok::unknown;
+	  break;
 	}
-#endif
-	TokenList.push_back(Tok);
-      }while(forlevel > 0);
+	if(!ignore)
+	  TokenList.push_back(Tok);
+      }while(level > 0);
+      /* End local var block */
       Tok.startToken();
       Tok.setKind(clang::tok::r_brace);
       TokenList.push_back(Tok);
@@ -727,7 +1039,6 @@ public:
 			  /*IsReinject=*/false);
     }
     return;
-    
   error:
     PP.Diag(Tok.getLocation(), clang::diag::err_expected) << expected;
     PP.DiscardUntilEndOfDirective();
@@ -746,8 +1057,19 @@ public:
     PP.AddPragmaHandler("xmp", new PragmaTemplateHandler());
     PP.AddPragmaHandler("xmp", new PragmaDistributeHandler());
     PP.AddPragmaHandler("xmp", new PragmaAlignHandler());
-    PP.AddPragmaHandler("xmp", new PragmaLoopHandler());    
-
+    PP.AddPragmaHandler("xmp", new PragmaArrayHandler());
+    PP.AddPragmaHandler("xmp", new PragmaLoopHandler());
+    PP.AddPragmaHandler("xmp", new PragmaShadowHandler());
+    PP.AddPragmaHandler("xmp", new PragmaReflectHandler());
+    PP.AddPragmaHandler("xmp", new PragmaTaskHandler());
+    PP.AddPragmaHandler("xmp", new PragmaTasksHandler());
+    PP.AddPragmaHandler("xmp", new PragmaGmoveHandler());
+    PP.AddPragmaHandler("xmp", new PragmaBcastHandler());
+    PP.AddPragmaHandler("xmp", new PragmaWaitAsyncHandler());
+    PP.AddPragmaHandler("xmp", new PragmaReductionHandler());
+    PP.AddPragmaHandler("xmp", new PragmaBarrierHandler());
+    PP.AddPragmaHandler("xmp", new PragmaReduceShadowHandler());
+    PP.AddPragmaHandler("xmp", new PragmaTemplateFixHandler());
   }
 
   /* コンパイル対象のファイルごとに呼ばれる関数 */
