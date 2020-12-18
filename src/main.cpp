@@ -43,6 +43,12 @@ public:
 	(node_stmt->getSubExpr());
       auto node_decl = declref->getDecl();
       node_decl->dump();
+      auto VD = llvm::dyn_cast<clang::VarDecl>(node_decl);
+      assert(VD);
+      if(VD&&VD->isFunctionOrMethodVarDecl()){
+	llvm::errs()<<"Local Decl\n";
+      }
+      VD->print(llvm::errs());
       int dim = content->getNumInits() - 1;
       llvm::errs()<<"Dimension"<< dim<<"\n";
       for(int i = 1; i < content->getNumInits(); i++){
@@ -52,16 +58,24 @@ public:
 	  llvm::errs()<<"ConvErr"<<"\n";
 	}
       }
-      SL = vdecl->getBeginLoc();
-      auto &SM = rew.getSourceMgr();
-      unsigned Line = SM.getSpellingLineNumber(SL);
-      llvm::errs()<<"Line Number"<<SM.getSpellingLineNumber(SL)<<"\n";
-      llvm::errs()<<"Column Number"<<SM.getSpellingColumnNumber(SL)<<"\n";
-      auto FID = SM.getFileID(SL);
-      clang::SourceRange SR(SM.translateLineCol(FID, Line,1),
-		     SM.translateLineCol(FID, Line,0));
+      {
+	SL = vdecl->getBeginLoc();
+	auto &SM = rew.getSourceMgr();
+	std::string codestr;
+	llvm::raw_string_ostream ss(codestr);
+	unsigned Line = SM.getSpellingLineNumber(SL);
+	llvm::errs()<<"Line Number"<<SM.getSpellingLineNumber(SL)<<"\n";
+	llvm::errs()<<"Column Number"<<SM.getSpellingColumnNumber(SL)<<"\n";
+	auto FID = SM.getFileID(SL);
+	clang::SourceRange SR(SM.translateLineCol(FID, Line, 1),
+			      SM.translateLineCol(FID, Line,
+						  std::numeric_limits<unsigned int>::max()));
 
-      rew.ReplaceText(SR,  "/* Pragma Node Found */");
+	VD->print(ss);
+	ss<<";\n";
+	ss<<"/*add init*/"<<"\n";
+	rew.ReplaceText(SR,  ss.str().c_str());
+      }
       return true;
     }
     if(name.find("__xmp_align") == 0){
