@@ -26,7 +26,27 @@ add_definitions(
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14")
 
 set(SOURCE_FILES 
-  src/main.cpp 
+  src/main.cpp
+  src/Rewriter.cpp
+  src/NodeHandler.cpp
+  src/PPUtil.cpp
+  src/PPAlign.cpp
+  src/PPArray.cpp
+  src/PPBarrier.cpp
+  src/PPBcast.cpp
+  src/PPDistribute.cpp
+  src/PPGmove.cpp
+  src/PPLoop.cpp
+  src/PPNode.cpp
+  src/PPReflect.cpp
+  src/PPReduction.cpp
+  src/PPShadow.cpp
+  src/PPTask.cpp
+  src/PPTasks.cpp
+  src/PPTemplate.cpp
+  src/PPTemplateFix.cpp
+  src/PPReduceShadow.cpp
+  src/PPWaitAsync.cpp
  )
 
 add_executable(xmpplagma ${SOURCE_FILES})
