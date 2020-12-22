@@ -16,15 +16,14 @@ class MyASTVisitor : public clang::RecursiveASTVisitor<MyASTVisitor> {
     
   };
   clang::ASTContext &ast;
-  struct align_vars{
-    std::vector<clang::VarDecl*> vars;
-  };
+  std::vector<clang::VarDecl*> AlignedVars;
   bool NodeHandler(clang::VarDecl *vdecl);
   bool AlignHandler(clang::VarDecl *vdecl);
  public:
  MyASTVisitor(clang::Rewriter &r,clang::ASTContext &a) : rew(r),ast(a) {}
   /* まず、pragmaを置き換えた変数を見つける */
   bool VisitVarDecl(clang::VarDecl *vdecl);
+  bool VisitArraySubscriptExpr(clang::ArraySubscriptExpr *ASE);
   /* 関数宣言を見つけると呼ばれるコールバック関数 */
   bool VisitFunctionDecl(clang::FunctionDecl *fdecl);
 };

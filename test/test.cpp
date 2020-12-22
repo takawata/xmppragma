@@ -9,7 +9,12 @@ double u[N2][N1];
 
 int main(int ac, char** av)
 {
-  
+  /*confirm this is not replaced.*/
+  {
+    double u[2][3];
+    u[0][0] = 0.3;
+  }
+ 
   printf("hello\n");
 #pragma xmp loop (j,i) on t[j][i]  
   for(int j = 0; j < N2; j++){

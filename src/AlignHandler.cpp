@@ -10,6 +10,9 @@ bool MyASTVisitor::AlignHandler(clang::VarDecl *vdecl)
     (align_stmt->getSubExpr());
   auto align_decl = declref->getDecl();
   align_decl->dump();
+  auto avdecl = llvm::dyn_cast<clang::VarDecl>(align_decl);
+  assert(avdecl);
+  AlignedVars.push_back(avdecl);
   rew.InsertTextBefore(vdecl->getBeginLoc(),
 		       "/* Pragma Align Found */");
   return true;
