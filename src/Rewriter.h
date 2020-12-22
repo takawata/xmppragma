@@ -2,12 +2,6 @@
 #include "clang/AST/ASTConsumer.h"
 #include "clang/AST/ASTContext.h"
 #include "clang/AST/RecursiveASTVisitor.h"
-#include "clang/Basic/Version.h"
-#include "clang/Basic/Diagnostic.h"
-#include "clang/Lex/LexDiagnostic.h"
-#include "clang/Frontend/ASTConsumers.h"
-#include "clang/Frontend/CompilerInstance.h"
-#include "clang/Frontend/FrontendActions.h"
 #include "clang/Rewrite/Core/Rewriter.h"
 #include "clang/Tooling/CommonOptionsParser.h"
 #include "clang/Tooling/Tooling.h"
@@ -26,6 +20,7 @@ class MyASTVisitor : public clang::RecursiveASTVisitor<MyASTVisitor> {
     std::vector<clang::VarDecl*> vars;
   };
   bool NodeHandler(clang::VarDecl *vdecl);
+  bool AlignHandler(clang::VarDecl *vdecl);
  public:
  MyASTVisitor(clang::Rewriter &r,clang::ASTContext &a) : rew(r),ast(a) {}
   /* まず、pragmaを置き換えた変数を見つける */

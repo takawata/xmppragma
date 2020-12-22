@@ -8,16 +8,7 @@ bool MyASTVisitor::VisitVarDecl(clang::VarDecl *vdecl){
       return NodeHandler(vdecl);
     }
     if(name.find("__xmp_align") == 0){
-      auto content = llvm::dyn_cast<clang::InitListExpr>(vdecl->getInit());
-      assert((content));
-      auto align_stmt = llvm::dyn_cast<clang::UnaryOperator>
-	(content->getInit(0)->IgnoreCasts());
-      auto declref = llvm::dyn_cast<clang::DeclRefExpr>
-	(align_stmt->getSubExpr());
-      auto align_decl = declref->getDecl();
-      align_decl->dump();
-      rew.InsertTextBefore(vdecl->getBeginLoc(),
-			   "/* Pragma Align Found */");
+      return AlignHandler(vdecl);
     }
     llvm::errs()<<vdecl->getName()<<"\n";
     return true;

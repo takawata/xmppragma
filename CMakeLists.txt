@@ -28,6 +28,7 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14")
 set(SOURCE_FILES 
   src/main.cpp
   src/Rewriter.cpp
+  src/AlignHandler.cpp
   src/NodeHandler.cpp
   src/PPUtil.cpp
   src/PPAlign.cpp
