@@ -1,4 +1,4 @@
-#include "Rewriter.h"
+#include <clang/Lex/Preprocessor.h>
 #include "PPUtil.h"
 
 void PPUtil::AddVoidPtr(clang::Preprocessor &PP,

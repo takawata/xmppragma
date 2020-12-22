@@ -1,5 +1,6 @@
 #ifndef PPUTIL_H
 #define PPUTIL_H
+#include <clang/Lex/Token.h>
 namespace PPUtil{
   void AddVoidPtr(clang::Preprocessor &PP,
 		  clang::SmallVector<clang::Token, 1> &TokenList,

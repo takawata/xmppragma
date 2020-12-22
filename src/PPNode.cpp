@@ -1,4 +1,4 @@
-#include "Rewriter.h"
+#include <clang/Lex/Preprocessor.h>
 #include "PPUtil.h"
 #include "PPclass.h"
 

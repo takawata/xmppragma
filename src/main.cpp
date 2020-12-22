@@ -1,4 +1,12 @@
+#include "clang/Basic/Version.h"
+#include "clang/Basic/Diagnostic.h"
+#include "clang/Lex/LexDiagnostic.h"
+#include "clang/Frontend/ASTConsumers.h"
+#include "clang/Frontend/CompilerInstance.h"
+#include "clang/Frontend/FrontendActions.h"
 #include "Rewriter.h"
+#include "clang/Tooling/CommonOptionsParser.h"
+#include "clang/Tooling/Tooling.h"
 #include "PPUtil.h"
 #include "PPclass.h"
 
