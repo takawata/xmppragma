@@ -19,7 +19,7 @@ void PragmaDistributeHandler::HandlePragma(clang::Preprocessor &PP,
     clang::IdentifierInfo *II;
     std::string idstr;
     std::string name;
-    
+    clang::SourceLocation EndLoc;
     name = std::string("__xmp_distribute") + std::to_string(nodes);
     SetNumericConstant(zeroToken, "0");      
     PP.Lex(distTok);
@@ -94,6 +94,7 @@ void PragmaDistributeHandler::HandlePragma(clang::Preprocessor &PP,
     while(!Tok.is(clang::tok::eod)){
       PP.Lex(Tok);
     }
+    EndLoc = Tok.getLocation();
     /*Construct void * array*/
     {
       AddVar(PP, TokenList, name, StartLoc);
@@ -105,7 +106,7 @@ void PragmaDistributeHandler::HandlePragma(clang::Preprocessor &PP,
 	Tok.setKind(clang::tok::comma);
 	TokenList.push_back(Tok);
       }
-      AddEndBrace(TokenList);
+      AddEndBrace(TokenList, EndLoc);
       auto TokenArray = std::make_unique<clang::Token[]>(TokenList.size());
       std::copy(TokenList.begin(), TokenList.end(), TokenArray.get());
       PP.EnterTokenStream(std::move(TokenArray), TokenList.size(),

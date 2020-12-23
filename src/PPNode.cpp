@@ -30,7 +30,7 @@ void PragmaNodesHandler::HandlePragma(clang::Preprocessor &PP,
     while(!Tok.is(clang::tok::eod)){
       PP.Lex(Tok);
     }
-    llvm::errs()<<"AA";        
+
     {    
       clang::SourceLocation EndLoc = Tok.getLocation();    
       llvm::errs()<<name<<"\n";
@@ -46,7 +46,7 @@ void PragmaNodesHandler::HandlePragma(clang::Preprocessor &PP,
 	TokenList.push_back(Tok);
       }
 
-      AddEndBrace(TokenList);
+      AddEndBrace(TokenList, EndLoc);
       
       auto TokenArray = std::make_unique<clang::Token[]>(TokenList.size());
       std::copy(TokenList.begin(), TokenList.end(), TokenArray.get());

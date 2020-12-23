@@ -144,11 +144,13 @@ void PPUtil::AddTokenPtrElem(clang::SmallVector<clang::Token, 1> &TokenList,
   Tok.setKind(clang::tok::comma);
   TokenList.push_back(Tok);
 }
-void PPUtil::AddEndBrace(clang::SmallVector<clang::Token, 1> &TokenList)
+void PPUtil::AddEndBrace(clang::SmallVector<clang::Token, 1> &TokenList,
+			 clang::SourceLocation EndLoc)
 {
   clang::Token Tok;
   Tok.startToken();
   Tok.setKind(clang::tok::r_brace);
+  Tok.setLocation(EndLoc);
   TokenList.push_back(Tok);
   Tok.startToken();
   Tok.setKind(clang::tok::semi);

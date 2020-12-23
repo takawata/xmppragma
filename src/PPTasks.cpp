@@ -9,11 +9,17 @@ void PragmaTasksHandler::HandlePragma(clang::Preprocessor &PP,
   clang::SmallVector<clang::Token,1>  TokenList;
   clang::SourceLocation StartLoc = FirstTok.getLocation();
   std::string name = std::string("__xmp_tasks")+std::to_string(nodes);
-  
+  clang::Token Tok;
   nodes++;
+  PP.Lex(Tok);
+  while(!Tok.is(clang::tok::eod)){
+    PP.Lex(Tok);
+  }
+  
+  clang::SourceLocation EndLoc = Tok.getLocation();
   AddVar(PP, TokenList, name, StartLoc);
-  AddEndBrace(TokenList);
-  PP.DiscardUntilEndOfDirective();
+  AddEndBrace(TokenList, EndLoc);
+    
   auto TokenArray = std::make_unique<clang::Token[]>(TokenList.size());
   std::copy(TokenList.begin(), TokenList.end(), TokenArray.get());
   PP.EnterTokenStream(std::move(TokenArray), TokenList.size(),

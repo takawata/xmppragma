@@ -72,7 +72,7 @@ void PragmaLoopHandler::HandlePragma(clang::Preprocessor &PP,
     while(!Tok.is(clang::tok::eod)){
       PP.Lex(Tok);
     }
-
+    EndLoc = Tok.getLocation();
     /*Construct void * array*/
     {
       /*{*/
@@ -97,7 +97,7 @@ void PragmaLoopHandler::HandlePragma(clang::Preprocessor &PP,
       for(auto &&LV : LoopVarList){
 	AddTokenPtrElem(TokenList, LV);
       }
-      AddEndBrace(TokenList);
+      AddEndBrace(TokenList, EndLoc);
       //Scan For loop
       expected = clang::tok::kw_for;
       enum scanstate{wait_lparen,wait_for_rparen, wait_rparen,

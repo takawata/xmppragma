@@ -43,7 +43,7 @@ void PragmaTemplateHandler::HandlePragma(clang::Preprocessor &PP,
 	Tok.setKind(clang::tok::comma);
 	TokenList.push_back(Tok);
       }
-      AddEndBrace(TokenList);
+      AddEndBrace(TokenList, EndLoc);
       
       auto TokenArray = std::make_unique<clang::Token[]>(TokenList.size());
       std::copy(TokenList.begin(), TokenList.end(), TokenArray.get());

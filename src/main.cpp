@@ -55,7 +55,7 @@ public:
     const clang::RewriteBuffer *rbuf = rew.getRewriteBufferFor(id);
     if (rbuf != nullptr) {
       std::string buf(rbuf->begin(), rbuf->end());
-      std::cerr << buf;
+      std::cout << buf;
     } else {
       std::cerr << "Original code is unchanged" << std::endl;
     }

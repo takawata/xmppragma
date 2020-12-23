@@ -96,7 +96,7 @@ void PragmaAlignHandler::HandlePragma(clang::Preprocessor &PP,
     while(!Tok.is(clang::tok::eod)){
       PP.Lex(Tok);
     }
-    
+    EndLoc = Tok.getLocation();
     /*Construct void * array*/
     {
       AddVar(PP, TokenList, name, StartLoc);
@@ -120,7 +120,7 @@ void PragmaAlignHandler::HandlePragma(clang::Preprocessor &PP,
 	Tok.setKind(clang::tok::comma);
 	TokenList.push_back(Tok);
       }
-      AddEndBrace(TokenList);
+      AddEndBrace(TokenList, EndLoc);
       /* other params are not concerned for now*/
       auto TokenArray = std::make_unique<clang::Token[]>(TokenList.size());
       std::copy(TokenList.begin(), TokenList.end(), TokenArray.get());

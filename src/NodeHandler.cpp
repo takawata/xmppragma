@@ -33,15 +33,15 @@ bool MyASTVisitor::NodeHandler(clang::VarDecl *vdecl)
 		}
 	}
 	{
-		SL = vdecl->getBeginLoc();
-		auto &SM = rew.getSourceMgr();
-		std::string codestr;
-		llvm::raw_string_ostream ss(codestr);
-		unsigned Line = SM.getSpellingLineNumber(SL);
-		auto FID = SM.getFileID(SL);
-		clang::SourceRange SR(SM.translateLineCol(FID, Line, 1),
-				      SM.translateLineCol(FID, Line,
-							  std::numeric_limits<unsigned int>::max()));
+	  SL = vdecl->getBeginLoc();
+	  clang::SourceLocation EL = vdecl->getEndLoc();
+	  auto &SM = rew.getSourceMgr();
+	  std::string codestr;
+	  llvm::raw_string_ostream ss(codestr);
+	  unsigned Line = SM.getSpellingLineNumber(SL);
+	  auto FID = SM.getFileID(SL);
+	  clang::SourceRange SR(SM.translateLineCol(FID, Line, 1),
+				EL);
 	  VD->print(ss);
 	  ss<<";\n";
 	  for(int i = 1; i < dim; i++){
@@ -53,7 +53,7 @@ bool MyASTVisitor::NodeHandler(clang::VarDecl *vdecl)
 	  }
 	  ss<<"/*";
 	  ss<<"XMP_init_nodes_DYNAMIC_GLOBAL(&"<<nname<<","<< dim <<");";
-	  ss<<"/*/"<<"\n";
+	  ss<<"*/"<<"\n";
 	  rew.ReplaceText(SR,  ss.str().c_str());
 	}
 	return true;

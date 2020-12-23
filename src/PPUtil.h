@@ -24,7 +24,8 @@ namespace PPUtil{
 			clang::Token &myTok);
   void AddTokenPtrElem(clang::SmallVector<clang::Token, 1> &TokenList,
 		       clang::Token &elemTok);
-  void AddEndBrace(clang::SmallVector<clang::Token, 1> &TokenList);
+  void AddEndBrace(clang::SmallVector<clang::Token, 1> &TokenList,
+		   clang::SourceLocation End);
 }
 
 #endif
