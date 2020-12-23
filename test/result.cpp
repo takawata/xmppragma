@@ -27,7 +27,7 @@ int main(int ac, char** av)
 #pragma xmp loop (j,i) on t[j][i]  
   for(int j = 0; j < N2; j++){
     for(int i = 0;i < N1; i++){
-      *u = 0.0;
+      (*(_XMP_ADDR_u+(i)+_XMP_GTOL_acc_u_0*(j))) = 0.0;
     }
   }
   return 0;

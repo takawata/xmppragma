@@ -1,4 +1,5 @@
 #include "Rewriter.h"
+#include <clang/AST/Expr.h>
 
 /* まず、pragmaを置き換えた変数を見つける */
 bool MyASTVisitor::VisitVarDecl(clang::VarDecl *vdecl){
@@ -23,16 +24,20 @@ bool MyASTVisitor::VisitFunctionDecl(clang::FunctionDecl *fdecl) {
 
 bool MyASTVisitor::VisitArraySubscriptExpr(clang::ArraySubscriptExpr *ASE)
 {
+  std::vector<clang::Expr*> IdxList;
   auto T = ASE->getType();
-  if(T->isCompoundType()){
+  if(T->isArrayType()||T->isPointerType()){
     return true;
   }
   clang::Expr *E;
   clang::DeclRefExpr *DRE;
-  //std::vector<clang::Expr *> Idxs;
+  std::string codestr;
+  llvm::raw_string_ostream ss(codestr);
   
   for(clang::ArraySubscriptExpr *IT = ASE ; IT;){
     E = IT->getBase();
+    clang::Expr* IdE = IT->getIdx();
+    IdxList.push_back(IdE);
     auto ICE = llvm::dyn_cast<clang::ImplicitCastExpr>(E);
     if(!ICE){
       llvm::errs()<<"Invalid\n";
@@ -59,7 +64,22 @@ bool MyASTVisitor::VisitArraySubscriptExpr(clang::ArraySubscriptExpr *ASE)
   auto &SM = rew.getSourceMgr();
   clang::SourceRange SR(SL, EL);
   std::string var = VD->getName();
-  var = "*" + var;
-  rew.ReplaceText(SR, var.c_str());
+  ss <<"(*(_XMP_ADDR_" << var;
+  ss<<"+(";
+  {
+    int i = 0;
+    clang::PrintingPolicy PP(ast.getLangOpts());
+
+    for(auto IT = IdxList.begin();;){
+      (*IT)->printPretty(ss, nullptr, PP);
+      IT++;
+      if(IT == IdxList.end())
+	break;
+      ss<<")+_XMP_GTOL_acc_"<<var<<"_"<<i<<"*(";
+      i++;
+    }
+    ss<<")))";
+  }
+  rew.ReplaceText(SR, ss.str().c_str());
   return true;
 }
