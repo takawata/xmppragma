@@ -3,16 +3,24 @@
 #define N2 64
 
 static void *p;
+/*Dimension2*/
+/*Subscripts-1,4,*/
 static int __XMP_NODES_SIZE_p1;
 static int __XMP_NODES_RANK_p0;
 static int __XMP_NODES_RANK_p1;
 /*XMP_init_nodes_DYNAMIC_GLOBAL(&p,2);*/
 
-#pragma xmp template t[N2][N1]
+static void *t;
+/*Dimension2*/
+/*Subscripts64,64,*/
+
 #pragma xmp distribute t[block][block] onto p
 
 double* u;
 static void * _XMP_DESC_u;
+/*Template t Dimension 2*/
+/*Array subscripts:64,64,*/
+
 
 /* found during AST traversal */
 int main(int ac, char** av)
