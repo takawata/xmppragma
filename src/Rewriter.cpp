@@ -64,7 +64,7 @@ bool MyASTVisitor::VisitArraySubscriptExpr(clang::ArraySubscriptExpr *ASE)
   auto &SM = rew.getSourceMgr();
   clang::SourceRange SR(SL, EL);
   std::string var = VD->getName();
-  ss <<"(*(_XMP_ADDR_" << var;
+  ss <<"(*(" << var;
   ss<<"+(";
   {
     int i = 0;
