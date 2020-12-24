@@ -15,15 +15,6 @@ bool MyASTVisitor::NodeHandler(clang::VarDecl *vdecl)
 	VD->print(llvm::errs());
 	std::string nname = VD->getName();
 	int dim = content->getNumInits() - 1;
-	
-	llvm::errs()<<"Dimension"<< dim<<"\n";
-	for(int i = 1; i < content->getNumInits(); i++){
-		if( content->getInit(i)->IgnoreCasts()->EvaluateAsInt(ev, ast)){
-			llvm::errs()<<ev.Val.getInt()<<"\n";
-		}else{
-			llvm::errs()<<"ConvErr"<<"\n";
-		}
-	}
 	{
 	  clang::SourceRange SR = getPragmaSourceRange(vdecl);
 	  std::string codestr;
@@ -31,6 +22,17 @@ bool MyASTVisitor::NodeHandler(clang::VarDecl *vdecl)
 	  ss<<"static ";
 	  VD->print(ss);
 	  ss<<";\n";
+
+	  ss<<"/*Dimension"<< dim<<"*/\n";
+	  ss<<"/*Subscripts";
+	  for(int i = 1; i < content->getNumInits(); i++){
+	    if( content->getInit(i)->IgnoreCasts()->EvaluateAsInt(ev, ast)){
+	      ss<<ev.Val.getInt()<<",";
+	    }else{
+	      llvm::errs()<<"ConvErr"<<"\n";
+	    }
+	  }
+	  ss<<"*/\n";
 	  for(int i = 1; i < dim; i++){
 		  ss<<"static int __XMP_NODES_SIZE_"<<nname<<i<<";\n";
 	  }
