@@ -9,6 +9,8 @@
 #include <utility>
 #include <iostream>
 
+
+
 /* AST traversal */
 class MyASTVisitor : public clang::RecursiveASTVisitor<MyASTVisitor> {
   clang::Rewriter &rew;
@@ -19,6 +21,8 @@ class MyASTVisitor : public clang::RecursiveASTVisitor<MyASTVisitor> {
   std::vector<clang::VarDecl*> AlignedVars;
   bool NodeHandler(clang::VarDecl *vdecl);
   bool AlignHandler(clang::VarDecl *vdecl);
+  clang::SourceRange getPragmaSourceRange(clang::VarDecl *vdecl);
+  clang::VarDecl *getVarDeclFromDescArray(clang::InitListExpr *, int);
  public:
  MyASTVisitor(clang::Rewriter &r,clang::ASTContext &a) : rew(r),ast(a) {}
   /* まず、pragmaを置き換えた変数を見つける */
