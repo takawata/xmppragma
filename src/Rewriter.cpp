@@ -11,6 +11,9 @@ bool MyASTVisitor::VisitVarDecl(clang::VarDecl *vdecl){
     if(name.find("__xmp_align") == 0){
       return AlignHandler(vdecl);
     }
+    if(name.find("__xmp_template") == 0){
+      return TemplateHandler(vdecl);
+    }
 
     llvm::errs()<<vdecl->getName()<<"\n";
     return true;

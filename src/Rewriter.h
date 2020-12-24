@@ -21,6 +21,7 @@ class MyASTVisitor : public clang::RecursiveASTVisitor<MyASTVisitor> {
   std::vector<clang::VarDecl*> AlignedVars;
   bool NodeHandler(clang::VarDecl *vdecl);
   bool AlignHandler(clang::VarDecl *vdecl);
+  bool TemplateHandler(clang::VarDecl *vdecl);
   clang::SourceRange getPragmaSourceRange(clang::VarDecl *vdecl);
   clang::VarDecl *getVarDeclFromDescArray(clang::InitListExpr *, int);
  public:

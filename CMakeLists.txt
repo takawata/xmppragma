@@ -31,6 +31,7 @@ set(SOURCE_FILES
   src/RewriteUtil.cpp
   src/AlignHandler.cpp
   src/NodeHandler.cpp
+  src/TemplateHandler.cpp
   src/PPUtil.cpp
   src/PPAlign.cpp
   src/PPArray.cpp
