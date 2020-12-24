@@ -2,7 +2,7 @@
 #define N1 64
 #define N2 64
 
-void *p;
+static void *p;
 static int __XMP_NODES_SIZE_p1;
 static int __XMP_NODES_RANK_p0;
 static int __XMP_NODES_RANK_p1;
@@ -11,8 +11,8 @@ static int __XMP_NODES_RANK_p1;
 #pragma xmp template t[N2][N1]
 #pragma xmp distribute t[block][block] onto p
 
-double u[N2][N1];
-#pragma xmp /* Pragma Align Found */align u[j][i] with t[j][i]
+double* u;
+static void * _XMP_DESC_u;
 
 /* found during AST traversal */
 int main(int ac, char** av)
@@ -27,7 +27,7 @@ int main(int ac, char** av)
 #pragma xmp loop (j,i) on t[j][i]  
   for(int j = 0; j < N2; j++){
     for(int i = 0;i < N1; i++){
-      (*(_XMP_ADDR_u+(i)+_XMP_GTOL_acc_u_0*(j))) = 0.0;
+      (*(u+(i)+_XMP_GTOL_acc_u_0*(j))) = 0.0;
     }
   }
   return 0;
