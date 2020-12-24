@@ -22,9 +22,24 @@ static int __XMP_NODES_RANK_p1;
 
 #pragma nodeが複数行に渡っているが正しく処理されていること
 
-Alignが認識されていて、コメントが追加されていること
+配列定義のdouble u[N2][N1]がdouble *uに置き換わっていること
+
+#pragma xmp alignが
+static void * _XMP_DESC_u;
+/*Template t Dimension 2*/
+/*Array subscripts:64,64,*/
+
+に置き換わっていること
 
 u[i][j]が (*(_XMP_ADDR_u+(i)+_XMP_GTOL_acc_u_0*(j)))に置き換えられていること
 
 その上の、別のスコープにしてあるu[0][0]が置き換えられていないこと
+
+#pragma xmp template t[64][64]が
+
+static void *t;
+/*Dimension2*/
+/*Subscripts64,64,*/
+
+に書き換えられていること。
 
