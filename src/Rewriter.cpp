@@ -17,6 +17,10 @@ bool MyASTVisitor::VisitVarDecl(clang::VarDecl *vdecl){
     if(name.find("__xmp_loop") == 0){
       return LoopHandler(vdecl);
     }
+    if(name.find("__xmp_distribute") == 0){
+      return DistributeHandler(vdecl);
+    }
+
     llvm::errs()<<vdecl->getName()<<"\n";
     return true;
 }
