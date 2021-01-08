@@ -94,6 +94,11 @@ void PragmaLoopHandler::HandlePragma(clang::Preprocessor &PP,
       /*Add descriptor array decl.*/
       AddVar(PP, TokenList, name, StartLoc);
       AddTokenPtrElem(TokenList, NodeTok);
+      CreateUIntToken(PP, Tok, LoopVarList.size(), StartLoc, EndLoc);
+      AddVoidCastToken(TokenList, Tok);
+      Tok.startToken();
+      Tok.setKind(clang::tok::comma);
+      TokenList.push_back(Tok);
       for(auto &&LV : LoopVarList){
 	AddTokenPtrElem(TokenList, LV);
       }

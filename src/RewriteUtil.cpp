@@ -1,15 +1,21 @@
 #include "Rewriter.h"
 
-clang::SourceRange MyASTVisitor::getPragmaSourceRange(clang::VarDecl *vdecl)
+
+clang::SourceRange MyASTVisitor::getPragmaSourceRange(clang::VarDecl *vdecl,
+						      clang::Rewriter &r)
 {
   
   clang::SourceLocation SL = vdecl->getBeginLoc();
   clang::SourceLocation EL = vdecl->getEndLoc();
-  auto &SM = rew.getSourceMgr();
+  auto &SM = r.getSourceMgr();
   unsigned Line = SM.getSpellingLineNumber(SL);
   auto FID = SM.getFileID(SL);
   return clang::SourceRange(SM.translateLineCol(FID, Line, 1),
 			    EL);
+}
+clang::SourceRange MyASTVisitor::getPragmaSourceRange(clang::VarDecl *vdecl)
+{
+  return getPragmaSourceRange(vdecl, rew);
 }
 
 clang::VarDecl *MyASTVisitor::getVarDeclFromDescArray(clang::InitListExpr *IL,

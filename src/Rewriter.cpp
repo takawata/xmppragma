@@ -14,7 +14,9 @@ bool MyASTVisitor::VisitVarDecl(clang::VarDecl *vdecl){
     if(name.find("__xmp_template") == 0){
       return TemplateHandler(vdecl);
     }
-
+    if(name.find("__xmp_loop") == 0){
+      return LoopHandler(vdecl);
+    }
     llvm::errs()<<vdecl->getName()<<"\n";
     return true;
 }
