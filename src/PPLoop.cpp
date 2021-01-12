@@ -19,6 +19,7 @@ void PragmaLoopHandler::HandlePragma(clang::Preprocessor &PP,
 
     int hasvarlist;
     name = std::string("__xmp_loop") + std::to_string(nodes);
+    nodes++;
     PP.Lex(Tok);
 
     if(Tok.is(clang::tok::l_paren)){

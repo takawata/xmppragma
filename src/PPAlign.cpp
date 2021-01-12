@@ -18,7 +18,8 @@ void PragmaAlignHandler::HandlePragma(clang::Preprocessor &PP,
     int tempdim = 0;
     clang::SourceLocation StartLoc = FirstTok.getLocation();
     clang::SourceLocation EndLoc;
-    name = std::string("__xmp_align") + std::to_string(nodes);    
+    name = std::string("__xmp_align") + std::to_string(nodes);
+    nodes++;
     PP.Lex(alignTok);
     if(!alignTok.is(expected = clang::tok::identifier)){
       goto error;

@@ -21,6 +21,7 @@ void PragmaDistributeHandler::HandlePragma(clang::Preprocessor &PP,
     std::string name;
     clang::SourceLocation EndLoc;
     name = std::string("__xmp_distribute") + std::to_string(nodes);
+    nodes++;
     SetNumericConstant(zeroToken, "0");      
     PP.Lex(distTok);
 
