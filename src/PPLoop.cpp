@@ -2,7 +2,138 @@
 #include "PPUtil.h"
 #include "PPclass.h"
 using namespace PPUtil;
+static bool ScanForLoop(clang::Preprocessor &PP,
+			clang::SmallVector<clang::Token,1>  &TokenList,
+			 clang::SmallVector<clang::Token,1> &LoopVarList,
+			clang::tok::TokenKind &expected, clang::Token &Tok);
 
+static bool SkipParen(clang::Preprocessor &PP,
+		      clang::SmallVector<clang::Token,1>  &TokenList,
+		      clang::tok::TokenKind &expected)
+{
+  clang::Token Tok;
+  PP.Lex(Tok);
+  if(!Tok.is(expected = clang::tok::l_paren))
+    return false;
+  TokenList.push_back(Tok);
+  int level = 1;
+  do{
+    PP.Lex(Tok);
+    TokenList.push_back(Tok);
+    if(Tok.is(clang::tok::l_paren))
+      level++;
+    if(Tok.is(clang::tok::r_paren))
+      level--;
+  }while(level > 0);
+  return true;
+}
+static bool ParseStmt(clang::Preprocessor &PP,
+		      clang::SmallVector<clang::Token,1>  &TokenList,
+			 clang::SmallVector<clang::Token,1> &LoopVarList,
+		      clang::tok::TokenKind &expected, clang::Token &Tok)
+{
+  clang::SmallVector<clang::Token, 1> PendList;
+  int level;
+  if(Tok.is(clang::tok::kw_if)||
+     Tok.is(clang::tok::kw_while)){
+    TokenList.push_back(Tok);
+    if(SkipParen(PP, TokenList, expected)== false){
+      return false;
+    }
+    PP.Lex(Tok);
+    return ParseStmt(PP, TokenList,LoopVarList,expected, Tok);
+  }
+  if(Tok.is(clang::tok::kw_for)){
+    if(ScanForLoop(PP, TokenList,LoopVarList, expected, Tok)== false){
+      return false;
+    }
+    return true;
+  }
+  if(Tok.is(clang::tok::l_brace)){
+    TokenList.push_back(Tok);
+    level = 1;
+    do{
+      PP.Lex(Tok);
+      if(Tok.is(clang::tok::kw_for)){
+	if(ScanForLoop(PP, TokenList,LoopVarList, expected, Tok)== false){
+	  return false;
+	}
+	continue;
+      }
+      TokenList.push_back(Tok);
+      if(Tok.is(clang::tok::l_brace)){
+	level++;
+	continue;
+      }
+      if(Tok.is(clang::tok::r_brace)){
+	level--;
+	continue;
+      }
+    }while(level > 0);
+    return true;
+  }
+
+  TokenList.push_back(Tok);
+  do{
+    PP.Lex(Tok);
+    if(Tok.is(clang::tok::l_paren)){
+      ParseStmt(PP, TokenList, LoopVarList, expected, Tok);
+    }else{
+      TokenList.push_back(Tok);
+    }
+  }while(!Tok.is(clang::tok::semi));
+  return true;
+}
+static bool ScanForLoop(clang::Preprocessor &PP,
+			clang::SmallVector<clang::Token,1>  &TokenList,
+			 clang::SmallVector<clang::Token,1> &LoopVarList,
+			clang::tok::TokenKind &expected, clang::Token &Tok)
+{
+  clang::SmallVector<clang::Token, 1> PendList;
+  int level;
+  if(!Tok.is(expected = clang::tok::kw_for)){
+    return false;
+  }
+  TokenList.push_back(Tok);
+  PP.Lex(Tok);
+  if(!Tok.is(expected = clang::tok::l_paren)){
+    return false;
+  }
+  TokenList.push_back(Tok);
+  do{
+    PP.Lex(Tok);
+    PendList.push_back(Tok);
+  }while(!Tok.is(clang::tok::identifier)&&!Tok.is(clang::tok::semi));
+  if(Tok.is(clang::tok::identifier)){
+    auto result = std::find_if(LoopVarList.begin(), LoopVarList.end(),
+			  [&Tok](clang::Token &VTok){
+			    return
+			      (Tok.getIdentifierInfo()->getName().str()
+			       == VTok.getIdentifierInfo()->getName().str());});
+    if(result == LoopVarList.end()){
+      for(auto it = PendList.begin(); it != PendList.end(); it++){
+	TokenList.push_back(*it);
+      }
+    }else{
+      TokenList.push_back(Tok);
+    }
+  }
+  do{
+    PP.Lex(Tok);
+    TokenList.push_back(Tok);
+  }while(Tok.is(clang::tok::semi));
+  level = 1;
+  do{
+    PP.Lex(Tok);
+    if(Tok.is(clang::tok::l_paren))
+      level++;
+    if(Tok.is(clang::tok::r_paren))
+      level--;
+    TokenList.push_back(Tok);
+  }while(level > 0);
+  PP.Lex(Tok);
+  return ParseStmt(PP, TokenList, LoopVarList, expected, Tok);
+}
 
 void PragmaLoopHandler::HandlePragma(clang::Preprocessor &PP,
 		    clang::PragmaIntroducer Introducer,
@@ -104,93 +235,9 @@ void PragmaLoopHandler::HandlePragma(clang::Preprocessor &PP,
 	AddTokenPtrElem(TokenList, LV);
       }
       AddEndBrace(TokenList, EndLoc);
+      PP.Lex(Tok);
+      ScanForLoop(PP, TokenList, LoopVarList, expected, Tok);
       //Scan For loop
-      expected = clang::tok::kw_for;
-      enum scanstate{wait_lparen,wait_for_rparen, wait_rparen,
-		     ignore_type, wait_ident, wait_single, none};
-      scanstate state = none;
-      int ignore = 0;
-      int level = 0;
-      int paren_level = 0;
-      do{
-	PP.Lex(Tok);
-	if((expected != clang::tok::unknown)&&
-	   !Tok.is(expected))
-	  goto error;
-	switch(Tok.getKind()){
-	case clang::tok::kw_if:
-	case clang::tok::kw_while:
-	  if(state != wait_single){
-	    level++;
-	  }
-	  state = none;
-	  expected = clang::tok::l_paren;
-	  break;
-	case clang::tok::kw_for:
-	  if(state != wait_single){
-	    level++;
-	  }
-	  expected = clang::tok::l_paren;
-	  state = wait_lparen;
-	  break;
-	case clang::tok::l_paren:
-	  paren_level++;
-	  if(state == wait_lparen){
-	    state = ignore_type;
-	  }else {
-	    state = wait_rparen;
-	  }
-	  expected = clang::tok::unknown;
-	  break;
-	case clang::tok::r_paren:
-	  paren_level--;
-	  if(paren_level < 0){
-	    goto error;
-	  }
-	  if(paren_level == 0){
-	    if(state == wait_rparen){
-	      state = wait_single;
-	    }
-	  }
-	  expected = clang::tok::unknown;
-	  break;
-	case clang::tok::l_brace:
-	  if(state == wait_single){
-	    state = none;
-	  }else{
-	    level++;
-	  }
-	  expected = clang::tok::unknown;
-	  break;
-	case clang::tok::r_brace:
-	  level--;
-	  expected = clang::tok::unknown;
-	case clang::tok::identifier:
-	  if(state == wait_ident){
-	    ignore = 0;
-	    state = wait_rparen;
-	  }
-	  expected = clang::tok::unknown;
-	  break;
-	case clang::tok::semi:
-	  if(state == wait_single){
-	    state = none;
-	    level --;
-	  }
-	  expected = clang::tok::unknown;
-	  break;
-	default:
-	  if(state == ignore_type){
-	    ignore = 1;
-	    state = wait_ident;
-	  }
-	  expected = clang::tok::unknown;
-	  break;
-	}
-	if(!ignore)
-	  TokenList.push_back(Tok);
-      }while(level > 0);
-      /* End local var block */
       Tok.startToken();
       Tok.setKind(clang::tok::r_brace);
       TokenList.push_back(Tok);
