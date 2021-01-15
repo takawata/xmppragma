@@ -161,9 +161,14 @@ bool MyASTVisitor::VisitForStmt(clang::ForStmt *FST)
 
 		if(r->Order == 0){
 			auto ED = FST->getEndLoc();
+			clang::Rewriter::RewriteOptions rangeOpts;
+			rangeOpts.IncludeInsertsAtBeginOfRange = false;
+			auto  sz = rew.getRangeSize(clang::SourceRange(ED, ED),
+						    rangeOpts) + 1;
 			auto endblock = std::string("}\n") +
 				r->LD->getReduction() + std::string("\n");
-			rew.InsertTextAfter(ED, endblock.c_str());
+			rew.InsertText(ED.getLocWithOffset(sz),
+				       endblock.c_str());
 		}
 		llvm::errs()<<"FIND_LOOP "<<Init<<","<<Count<<","<<Step<<"\n";
 		
