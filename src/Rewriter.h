@@ -34,6 +34,7 @@ public:
   static clang::SourceRange getPragmaSourceRange(clang::VarDecl *vdecl, clang::Rewriter &r);
   static clang::VarDecl *getVarDeclFromDescArray(clang::InitListExpr *, int);
   MyASTVisitor(clang::Rewriter &r,clang::ASTContext &a) : rew(r),ast(a) {}
+  static std::string getReductionFunc(int x);
   /* まず、pragmaを置き換えた変数を見つける */
   bool VisitVarDecl(clang::VarDecl *vdecl);
   bool VisitArraySubscriptExpr(clang::ArraySubscriptExpr *ASE);

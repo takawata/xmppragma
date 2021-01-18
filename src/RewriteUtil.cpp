@@ -1,5 +1,48 @@
 #include "Rewriter.h"
 
+std::string MyASTVisitor::getReductionFunc(int reductionType)
+{
+	std::string reductionFunc;
+	switch(reductionType){
+	case clang::tok::plus:
+		reductionFunc ="sum";
+		break;
+	case clang::tok::star:
+		reductionFunc ="mult";
+		break;
+	case clang::tok::amp:
+		reductionFunc ="and";
+		break;
+	case clang::tok::ampamp:
+		reductionFunc ="land";
+		break;
+	case clang::tok::pipe:
+		reductionFunc ="or";
+		break;
+	case clang::tok::pipepipe:
+		reductionFunc ="lor";
+		break;
+	case -1:
+		reductionFunc ="max";
+		break;
+	case -2:
+		reductionFunc ="min";
+		break;
+	case -3:
+		reductionFunc ="firstmax";
+		break;
+	case -4:
+		reductionFunc ="firstmin";
+		break;
+	case -5:
+		reductionFunc ="lastmax";
+		break;
+	case -6:
+		reductionFunc ="lastmin";
+		break;
+	}
+	return reductionFunc;
+}
 
 clang::SourceRange MyASTVisitor::getPragmaSourceRange(clang::VarDecl *vdecl,
 						      clang::Rewriter &r)

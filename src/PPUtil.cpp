@@ -132,6 +132,33 @@ void PPUtil::AddVoidCastToken(clang::SmallVector<clang::Token, 1> &TokenList,
   TokenList.push_back(myTok);
  
 }
+int PPUtil::getReductionKind(clang::Token Tok)
+{
+      switch(Tok.getKind()){
+      case clang::tok::plus:
+      case clang::tok::star:
+      case clang::tok::amp:
+      case clang::tok::pipe:
+      case clang::tok::ampamp:
+      case clang::tok::pipepipe:
+	return Tok.getKind();
+      case clang::tok::identifier:
+	{
+	  auto str = Tok.getIdentifierInfo()->getName().str();
+	  std::vector<const char*> keywords = {"max", "min", "firstmax",
+					 "firstmin", "lastmax", "lastmin"};
+	  auto result = std::find(keywords.begin(), keywords.end(), str);
+	  if(result != keywords.end()){
+	    return -((result - keywords.begin())+1);
+	  }else{
+	    return 0;
+	  }
+	}
+      default:
+	return 0;
+      }
+      return 0;
+}
 void PPUtil::AddTokenPtrElem(clang::SmallVector<clang::Token, 1> &TokenList,
 			 clang::Token &elemTok)
 {

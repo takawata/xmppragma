@@ -3,14 +3,24 @@ class LoopDesc{
 	std::vector <int> LoopCounts;
 	clang::VarDecl *PragmaDecl;
 	clang::VarDecl *NodeDecl;
-
+	clang::VarDecl *ReductionDecl;
+	std::string reductionFunc;
 	int Loops;
 	clang::Rewriter& rew;
 public:
-	LoopDesc(clang::VarDecl *pdecl, clang::VarDecl *node, int dim, clang::Rewriter &r):PragmaDecl(pdecl),NodeDecl(node),LoopCounts(dim),Loops(dim),rew(r){};
+	LoopDesc(clang::VarDecl *pdecl, clang::VarDecl *node, int dim, clang::Rewriter &r):PragmaDecl(pdecl),NodeDecl(node),LoopCounts(dim),Loops(dim),rew(r),ReductionDecl(nullptr){};
+	LoopDesc(clang::VarDecl *pdecl, clang::VarDecl *node, int dim, clang::Rewriter &r,int reductionType,clang::VarDecl *rdecl):PragmaDecl(pdecl),NodeDecl(node),LoopCounts(dim),Loops(dim),rew(r),ReductionDecl(rdecl)
+	{
+		reductionFunc = MyASTVisitor::getReductionFunc(reductionType);
+	};
 	
 	std::string getReduction(){
-		return std::string("/*Reduction*/");
+		if(!ReductionDecl){
+			return std::string("");
+		}
+		std::string nodeName = NodeDecl->getName();
+		std::string rvName = ReductionDecl->getName();	
+		return  std::string("xmp_loop_reduction_")+reductionFunc+"("+ nodeName + ","+ rvName+");";
 	}
 	void setLoopCount(int x, int pos)
 	{
@@ -47,6 +57,7 @@ public:
 };
 bool MyASTVisitor::LoopHandler(clang::VarDecl *vdecl)
 {
+	vdecl->print(llvm::errs());
 	clang::Expr::EvalResult ev;
 	clang::DeclContext *DC = vdecl->getLexicalDeclContext();
 	auto content = llvm::dyn_cast<clang::InitListExpr>(vdecl->getInit());
@@ -54,7 +65,7 @@ bool MyASTVisitor::LoopHandler(clang::VarDecl *vdecl)
 	llvm::errs()<<"LOOP"<<"\n";
 	auto VD = getVarDeclFromDescArray(content, 0);
 	
-	vdecl->print(llvm::errs());
+
 	assert(VD);
 	if(VD&&VD->isFunctionOrMethodVarDecl()){
 		llvm::errs()<<"Local Decl\n";
@@ -64,7 +75,20 @@ bool MyASTVisitor::LoopHandler(clang::VarDecl *vdecl)
 	auto dimstmt = llvm::dyn_cast<clang::IntegerLiteral>(content->getInit(1)
 							     ->IgnoreCasts());
 	int64_t dim = dimstmt->getValue().getSExtValue();
-	auto LD = new LoopDesc(vdecl, VD, dim, rew);
+	LoopDesc *LD;
+	if(content->getNumInits() ==  dim+4){
+		clang::Expr::EvalResult ev;
+		auto redFuncExpr = content->getInit(dim+2)->IgnoreCasts();
+		int redfunc = 0;
+		auto redVar = getVarDeclFromDescArray(content, dim+3);
+		if(redFuncExpr->EvaluateAsInt(ev, ast)){
+			redfunc = ev.Val.getInt().getSExtValue();
+		}
+		llvm::errs()<<"Reduction"<<redfunc<<"\n";
+		LD = new LoopDesc(vdecl, VD, dim, rew, redfunc, redVar);
+	}else{
+		LD = new LoopDesc(vdecl, VD, dim, rew);
+	}
 	for(int i = 0; i < dim; i++){
 	  auto loopVar = getVarDeclFromDescArray(content, 2+i);
 	  Loops.push_back(LoopInfo(loopVar, LD, i));

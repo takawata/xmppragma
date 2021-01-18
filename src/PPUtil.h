@@ -26,6 +26,7 @@ namespace PPUtil{
 		       clang::Token &elemTok);
   void AddEndBrace(clang::SmallVector<clang::Token, 1> &TokenList,
 		   clang::SourceLocation End);
+  int getReductionKind(clang::Token Tok);
 }
 
 #endif

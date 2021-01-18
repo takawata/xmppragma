@@ -140,6 +140,7 @@ void PragmaLoopHandler::HandlePragma(clang::Preprocessor &PP,
 		    clang::Token &FirstTok) {
     clang::Token Tok;
     clang::Token NodeTok;
+    clang::Token ReductionTok;
     clang::tok::TokenKind expected;
     clang::SmallVector<clang::Token,1>  TokenList;
     clang::SmallVector<clang::Token,1> LoopVarList;
@@ -147,7 +148,7 @@ void PragmaLoopHandler::HandlePragma(clang::Preprocessor &PP,
     clang::SourceLocation StartLoc = FirstTok.getLocation();
     clang::SourceLocation EndLoc;
     std::string name;
-
+    int reductionKind = 0;
     int hasvarlist;
     name = std::string("__xmp_loop") + std::to_string(nodes);
     nodes++;
@@ -184,6 +185,7 @@ void PragmaLoopHandler::HandlePragma(clang::Preprocessor &PP,
     if(!NodeTok.is(expected = clang::tok::identifier)){
       goto error;
     }
+
     PP.Lex(Tok);
     while(Tok.is(clang::tok::l_square)){
       PP.Lex(Tok);
@@ -198,8 +200,35 @@ void PragmaLoopHandler::HandlePragma(clang::Preprocessor &PP,
       if(!Tok.is(expected = clang::tok::r_square)){
 	goto error;
       }
-
+      PP.Lex(Tok);
     }
+
+    /*Reduction */
+    if(Tok.is(clang::tok::identifier)){
+      if(Tok.getIdentifierInfo()->getName().str() != "reduction"){
+	goto error;
+      }
+      PP.Lex(Tok);
+      if(!Tok.is(expected = clang::tok::l_paren))
+	goto error;
+      PP.Lex(Tok);
+      if((reductionKind = getReductionKind(Tok)) == 0){
+	goto error;
+      }
+      PP.Lex(Tok);
+      if(!Tok.is(expected = clang::tok::colon)){
+	goto error;
+      }
+      PP.Lex(ReductionTok);
+      if(!ReductionTok.is(expected = clang::tok::identifier)){
+	goto error;
+      }
+      PP.Lex(Tok);
+      if(!Tok.is(expected = clang::tok::r_paren)){
+	goto error;
+      }
+    }
+
     /*Discard tokens to eod*/
     while(!Tok.is(clang::tok::eod)){
       PP.Lex(Tok);
@@ -233,6 +262,25 @@ void PragmaLoopHandler::HandlePragma(clang::Preprocessor &PP,
       TokenList.push_back(Tok);
       for(auto &&LV : LoopVarList){
 	AddTokenPtrElem(TokenList, LV);
+      }
+      if(reductionKind != 0){
+	llvm::errs()<<"Reduction Found\n";
+	if(reductionKind<0){
+	  Tok.startToken();
+	  Tok.setKind(clang::tok::minus);
+	  AddVoidCastToken(TokenList,Tok);
+	  StartLoc = EndLoc = ReductionTok.getLocation();
+	  CreateUIntToken(PP, Tok, -reductionKind, StartLoc, EndLoc);
+	  TokenList.push_back(Tok);
+	}else{
+	  StartLoc = EndLoc = ReductionTok.getLocation();
+	  CreateUIntToken(PP, Tok, reductionKind, StartLoc, EndLoc);
+	  AddVoidCastToken(TokenList, Tok);
+	}
+	Tok.startToken();
+	Tok.setKind(clang::tok::comma);
+	TokenList.push_back(Tok);
+	AddTokenPtrElem(TokenList, ReductionTok);
       }
       AddEndBrace(TokenList, EndLoc);
       PP.Lex(Tok);
