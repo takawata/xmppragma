@@ -20,6 +20,12 @@ bool MyASTVisitor::VisitVarDecl(clang::VarDecl *vdecl){
     if(name.find("__xmp_distribute") == 0){
       return DistributeHandler(vdecl);
     }
+    if(name.find("__xmp_reflect") == 0){
+      return ReflectHandler(vdecl);
+    }
+    if(name.find("__xmp_shadow") == 0){
+      return ShadowHandler(vdecl);
+    }
 
     llvm::errs()<<vdecl->getName()<<"\n";
     return true;

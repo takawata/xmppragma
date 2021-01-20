@@ -33,6 +33,8 @@ set(SOURCE_FILES
   src/DistributeHandler.cpp
   src/NodeHandler.cpp
   src/LoopHandler.cpp
+  src/ReflectHandler.cpp
+  src/ShadowHandler.cpp
   src/TemplateHandler.cpp
   src/PPUtil.cpp
   src/PPAlign.cpp

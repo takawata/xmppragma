@@ -29,6 +29,8 @@ class MyASTVisitor : public clang::RecursiveASTVisitor<MyASTVisitor> {
   bool TemplateHandler(clang::VarDecl *vdecl);
   bool LoopHandler(clang::VarDecl *vdecl);
   bool DistributeHandler(clang::VarDecl *vdecl);
+  bool ReflectHandler(clang::VarDecl *vdecl);
+  bool ShadowHandler(clang::VarDecl *vdecl);
   clang::SourceRange getPragmaSourceRange(clang::VarDecl *vdecl);
 public:
   static clang::SourceRange getPragmaSourceRange(clang::VarDecl *vdecl, clang::Rewriter &r);
