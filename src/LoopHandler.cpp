@@ -191,8 +191,8 @@ bool MyASTVisitor::VisitForStmt(clang::ForStmt *FST)
 			rangeOpts.IncludeInsertsAtBeginOfRange = false;
 			auto  sz = rew.getRangeSize(clang::SourceRange(ED, ED),
 						    rangeOpts) + 1;
-			auto endblock = std::string("}\n") +
-				r->LD->getReduction() + std::string("\n");
+			auto endblock = std::string("\n") +
+				r->LD->getReduction() + std::string("}\n");
 			rew.InsertText(ED.getLocWithOffset(sz),
 				       endblock.c_str());
 		}

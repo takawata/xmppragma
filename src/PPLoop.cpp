@@ -149,6 +149,7 @@ void PragmaLoopHandler::HandlePragma(clang::Preprocessor &PP,
     std::vector<std::pair<clang::Token,clang::Token>> arrays;
     clang::SourceLocation StartLoc = FirstTok.getLocation();
     clang::SourceLocation EndLoc;
+    clang::SourceLocation REndLoc;
     std::string name;
     int reductionKind = 0;
     int hasvarlist;
@@ -254,12 +255,12 @@ void PragmaLoopHandler::HandlePragma(clang::Preprocessor &PP,
 	  Tok.startToken();
 	  Tok.setKind(clang::tok::minus);
 	  AddVoidCastToken(TokenList,Tok);
-	  StartLoc = EndLoc = ReductionTok.getLocation();
-	  CreateUIntToken(PP, Tok, -reductionKind, StartLoc, EndLoc);
+	  StartLoc = REndLoc = ReductionTok.getLocation();
+	  CreateUIntToken(PP, Tok, -reductionKind, StartLoc, REndLoc);
 	  TokenList.push_back(Tok);
 	}else{
-	  StartLoc = EndLoc = ReductionTok.getLocation();
-	  CreateUIntToken(PP, Tok, reductionKind, StartLoc, EndLoc);
+	  StartLoc = REndLoc = ReductionTok.getLocation();
+	  CreateUIntToken(PP, Tok, reductionKind, StartLoc, REndLoc);
 	  AddVoidCastToken(TokenList, Tok);
 	}
 	Tok.startToken();
