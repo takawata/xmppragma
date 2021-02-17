@@ -144,6 +144,8 @@ void PragmaLoopHandler::HandlePragma(clang::Preprocessor &PP,
     clang::tok::TokenKind expected;
     clang::SmallVector<clang::Token,1>  TokenList;
     clang::SmallVector<clang::Token,1> LoopVarList;
+    clang::SmallVector<clang::Token,1> ArrayTokenList;
+    PPNodeRef nodeRef(PP);
     std::vector<std::pair<clang::Token,clang::Token>> arrays;
     clang::SourceLocation StartLoc = FirstTok.getLocation();
     clang::SourceLocation EndLoc;
@@ -176,36 +178,18 @@ void PragmaLoopHandler::HandlePragma(clang::Preprocessor &PP,
     if(!Tok.is(expected = clang::tok::identifier)){
       goto error;
     }
-
     if(Tok.getIdentifierInfo()->getName().str() != "on"){
       goto error;
     }
     /* node or template ref*/
-    PP.Lex(NodeTok);
-    if(!NodeTok.is(expected = clang::tok::identifier)){
+    if(!nodeRef.Parse(false)){
       goto error;
     }
-
     PP.Lex(Tok);
-    while(Tok.is(clang::tok::l_square)){
-      PP.Lex(Tok);
-      if(!Tok.is(expected = clang::tok::identifier)){
-	goto error;
-      }
-      if(!hasvarlist){
-	LoopVarList.push_back(Tok);
-      }
-
-      PP.Lex(Tok);
-      if(!Tok.is(expected = clang::tok::r_square)){
-	goto error;
-      }
-      PP.Lex(Tok);
-    }
-
     /*Reduction */
     if(Tok.is(clang::tok::identifier)){
       if(Tok.getIdentifierInfo()->getName().str() != "reduction"){
+	llvm::errs()<<Tok.getIdentifierInfo()->getName().str()<<"\n";
 	goto error;
       }
       PP.Lex(Tok);
@@ -228,19 +212,19 @@ void PragmaLoopHandler::HandlePragma(clang::Preprocessor &PP,
 	goto error;
       }
     }
-
+    llvm::errs()<<"XX\n";
     /*Discard tokens to eod*/
     while(!Tok.is(clang::tok::eod)){
       PP.Lex(Tok);
     }
     EndLoc = Tok.getLocation();
+
     /*Construct void * array*/
     {
       /*{*/
       Tok.startToken();
       Tok.setKind(clang::tok::l_brace);
       TokenList.push_back(Tok);
-      Tok.startToken();
       /*define loop variable decl.*/
       for(auto &&LV : LoopVarList){
 	Tok.startToken();
@@ -251,7 +235,8 @@ void PragmaLoopHandler::HandlePragma(clang::Preprocessor &PP,
 	Tok.setKind(clang::tok::semi);
 	TokenList.push_back(Tok);
       }
-
+      nodeRef.outputDefinition(TokenList);
+      nodeRef.outputReference(NodeTok);
       /*Add descriptor array decl.*/
       AddVar(PP, TokenList, name, StartLoc);
       AddTokenPtrElem(TokenList, NodeTok);

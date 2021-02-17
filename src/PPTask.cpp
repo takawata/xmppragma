@@ -14,6 +14,7 @@ void PragmaTaskHandler::HandlePragma(clang::Preprocessor &PP,
     clang::Token nodeTok;
     std::string idstr;
     clang::Token Tok;
+    PPNodeRef nodeRef(PP);
     nodes++;
     PP.Lex(Tok);
 
@@ -24,19 +25,26 @@ void PragmaTaskHandler::HandlePragma(clang::Preprocessor &PP,
     if(idstr != "on"){
       goto error;
     }
-    PP.Lex(nodeTok);
-    if(!nodeTok.is(expected = clang::tok::identifier)){
-      goto error;
-    }
+
+    nodeRef.Parse(false);
+    PP.Lex(Tok);
 
     while(!Tok.is(clang::tok::eod)){
       PP.Lex(Tok);
     }
+
+
     EndLoc = Tok.getLocation();
     {
+      nodeRef.outputDefinition(TokenList);
+      nodeRef.outputReference(nodeTok);
       AddVar(PP, TokenList, name, StartLoc);
-      AddVoidCastToken(TokenList, nodeTok);
+      AddTokenPtrElem(TokenList, nodeTok);
+      /**/
       AddEndBrace(TokenList, EndLoc);
+      for(auto &X: TokenList){
+	llvm::errs()<< X.getName()<<" ";
+      }
       auto TokenArray = std::make_unique<clang::Token[]>(TokenList.size());
       std::copy(TokenList.begin(), TokenList.end(), TokenArray.get());
       PP.EnterTokenStream(std::move(TokenArray), TokenList.size(),

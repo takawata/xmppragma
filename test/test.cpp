@@ -12,6 +12,7 @@ double u[N2][N1];
 
 int main(int ac, char** av)
 {
+  int n;
   /*confirm this is not replaced.*/
   {
     double u[2][3];

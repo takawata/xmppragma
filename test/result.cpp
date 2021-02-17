@@ -14,7 +14,12 @@ static void *t;
 /*Dimension2*/
 /*Subscripts64,64,*/
 
-#pragma xmp distribute t[block][block] onto p
+/*
+XMP_init_template_Chunk(t,p)
+XMP_dist_template_BLOCK(t,0,0);
+XMP_dist_template_BLOCK(t,1,0);
+*/
+
 
 double* u;
 static void * _XMP_DESC_u;
@@ -32,12 +37,25 @@ int main(int ac, char** av)
   }
  
   printf("hello\n");
-#pragma xmp loop (j,i) on t[j][i]  
-  for(int j = 0; j < N2; j++){
-    for(int i = 0;i < N1; i++){
+/*Pragma Loop*/
+{
+/*Node :t*/
+int j;
+int _xmp_init_j= 0;
+int _xmp_step_j= 1;
+int _xmp_countj= 64;
+int i;
+int _xmp_init_i= 0;
+int _xmp_step_i= 1;
+int _xmp_counti= 64;
+
+  for(j = _xmp_init_j;j <= _xmp_count_j;j += _xmp_step_j){
+    for(i = _xmp_init_i;i <= _xmp_count_i;i += _xmp_step_i){
       (*(u+(i)+_XMP_GTOL_acc_u_0*(j))) = 0.0;
     }
   }
+/*Reduction*/
+}
   return 0;
 }
 

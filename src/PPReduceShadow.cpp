@@ -15,5 +15,6 @@ void PragmaReduceShadowHandler::HandlePragma(clang::Preprocessor &PP,
     }
  error:
     PP.DiscardUntilEndOfDirective();
+    return ;
 };
 

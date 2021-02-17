@@ -35,6 +35,7 @@ set(SOURCE_FILES
   src/LoopHandler.cpp
   src/ReflectHandler.cpp
   src/ShadowHandler.cpp
+  src/TaskHandler.cpp
   src/TemplateHandler.cpp
   src/PPUtil.cpp
   src/PPAlign.cpp

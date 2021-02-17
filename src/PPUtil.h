@@ -2,6 +2,18 @@
 #define PPUTIL_H
 #include <clang/Lex/Token.h>
 namespace PPUtil{
+  using TokenList = clang::SmallVector<clang::Token, 1>;
+  struct Triple {
+    int begin1;
+    int end1;
+    int begin2;
+    int end2;
+    int begin3;
+    int end3;
+  };
+  using TripleList = clang::SmallVector<Triple, 1>;
+  bool ArrayParser(clang::Preprocessor &PP, TokenList &TL, TripleList &TPL,
+		   bool ignoreIdent);
   void AddVoidPtr(clang::Preprocessor &PP,
 		  clang::SmallVector<clang::Token, 1> &TokenList,
 		  clang::Token &nameTok);
@@ -16,7 +28,7 @@ namespace PPUtil{
 		       clang::SourceLocation Start,
 		       clang::SourceLocation End);
   void SetNumericConstant(clang::Token &Tok, const char *number);
-  
+
   bool ArrayParser(clang::Preprocessor &PP,
 		   std::vector<std::pair<clang::Token, clang::Token>> &arrays,
 		   clang::Token &Tok);
@@ -27,6 +39,22 @@ namespace PPUtil{
   void AddEndBrace(clang::SmallVector<clang::Token, 1> &TokenList,
 		   clang::SourceLocation End);
   int getReductionKind(clang::Token Tok);
+  bool ParseAsync(clang::Preprocessor &PP, clang::Token &AsyncTok);
 }
-
+class PPNodeRef{
+  PPUtil::TripleList TPL;
+  PPUtil::TokenList TL;
+  clang::Preprocessor &PP;
+  clang::Token nodeTok;
+  std::string nodename;
+  bool ready;
+  static int nodes;
+public:
+  PPNodeRef(clang::Preprocessor &P):PP(P),ready(false)
+  {
+  };
+  bool Parse(bool ignoreIdent);
+  bool outputDefinition(llvm::SmallVector<clang::Token, 1> &TokenList);
+  bool outputReference(clang::Token &Tok);
+};
 #endif

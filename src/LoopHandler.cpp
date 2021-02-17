@@ -39,6 +39,8 @@ public:
 				(PragmaDecl, rew);
 
 			ss<<"/*Pragma Loop*/\n{\n";
+			NodeDecl->print(ss);
+			ss<<";\n";
 			ss<<"/*Node :"<<NodeDecl->getName()<<"*/\n";
 			for(int i=0; i < dim ; i++){
 				auto loopVar = 

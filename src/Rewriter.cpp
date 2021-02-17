@@ -26,6 +26,9 @@ bool MyASTVisitor::VisitVarDecl(clang::VarDecl *vdecl){
     if(name.find("__xmp_shadow") == 0){
       return ShadowHandler(vdecl);
     }
+    if(name.find("__xmp_task") == 0){
+      return TaskHandler(vdecl);
+    }
 
     llvm::errs()<<vdecl->getName()<<"\n";
     return true;
