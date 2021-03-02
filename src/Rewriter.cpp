@@ -88,7 +88,7 @@ bool MyASTVisitor::VisitArraySubscriptExpr(clang::ArraySubscriptExpr *ASE)
   auto &SM = rew.getSourceMgr();
   clang::SourceRange SR(SL, EL);
   std::string var = VD->getName();
-  ss <<"(*(" << var;
+  ss <<"(*(_XMP_DATA_" << var;
   ss<<"+(";
   {
     int i = 0;
@@ -105,5 +105,28 @@ bool MyASTVisitor::VisitArraySubscriptExpr(clang::ArraySubscriptExpr *ASE)
     ss<<")))";
   }
   rew.ReplaceText(SR, ss.str().c_str());
+  return true;
+}
+bool MyASTVisitor::VisitCallExpr(clang::CallExpr *CE)
+{
+  auto Args = CE->getArgs();
+  for(int i = 0; i < CE->getNumArgs(); i++ ){
+    auto Arg = llvm::dyn_cast<clang::DeclRefExpr>(Args[i]->IgnoreCasts());
+    if(Arg == nullptr){
+      continue;
+    }
+    auto VD = llvm::dyn_cast<clang::VarDecl>(Arg->getDecl());
+
+    if(VD){
+      auto res = std::find(AlignedVars.begin(), AlignedVars.end(), VD);
+      if(res == AlignedVars.end()){
+	continue;
+      }
+    }
+    llvm::errs()<<"Aligned value found\n";
+    clang::SourceRange ASR(Arg->getBeginLoc(), Arg->getEndLoc());
+    std::string varname = VD->getName();
+    rew.ReplaceText(ASR, "_XMP_DESC_"+varname);
+  }
   return true;
 }

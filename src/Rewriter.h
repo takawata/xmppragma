@@ -48,4 +48,5 @@ public:
   /* 関数宣言を見つけると呼ばれるコールバック関数 */
   bool VisitFunctionDecl(clang::FunctionDecl *fdecl);
   bool VisitForStmt(clang::ForStmt *FST);
+  bool VisitCallExpr(clang::CallExpr *CST);
 };
