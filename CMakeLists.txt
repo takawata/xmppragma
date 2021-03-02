@@ -30,6 +30,7 @@ set(SOURCE_FILES
   src/Rewriter.cpp
   src/RewriteUtil.cpp
   src/AlignHandler.cpp
+  src/BcastHandler.cpp
   src/DistributeHandler.cpp
   src/NodeHandler.cpp
   src/LoopHandler.cpp

@@ -14,6 +14,8 @@ class LoopDesc;
 /* AST traversal */
 class MyASTVisitor : public clang::RecursiveASTVisitor<MyASTVisitor> {
   clang::Rewriter &rew;
+  std::string epiloge;
+  llvm::raw_string_ostream epistream;
   struct LoopInfo{
     clang::VarDecl *loopVar;
     LoopDesc *LD;
@@ -25,6 +27,7 @@ class MyASTVisitor : public clang::RecursiveASTVisitor<MyASTVisitor> {
   clang::ASTContext &ast;
   std::vector<clang::VarDecl*> AlignedVars;
   bool NodeHandler(clang::VarDecl *vdecl);
+  bool BcastHandler(clang::VarDecl *vdecl);
   bool AlignHandler(clang::VarDecl *vdecl);
   bool TemplateHandler(clang::VarDecl *vdecl);
   bool LoopHandler(clang::VarDecl *vdecl);
@@ -36,8 +39,9 @@ class MyASTVisitor : public clang::RecursiveASTVisitor<MyASTVisitor> {
 public:
   static clang::SourceRange getPragmaSourceRange(clang::VarDecl *vdecl, clang::Rewriter &r);
   static clang::VarDecl *getVarDeclFromDescArray(clang::InitListExpr *, int);
-  MyASTVisitor(clang::Rewriter &r,clang::ASTContext &a) : rew(r),ast(a) {}
   static std::string getReductionFunc(int x);
+  MyASTVisitor(clang::Rewriter &r,clang::ASTContext &a);
+  std::string &getEpiloge(){  return epistream.str();};
   /* まず、pragmaを置き換えた変数を見つける */
   bool VisitVarDecl(clang::VarDecl *vdecl);
   bool VisitArraySubscriptExpr(clang::ArraySubscriptExpr *ASE);

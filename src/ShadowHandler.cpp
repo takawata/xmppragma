@@ -19,10 +19,15 @@ bool MyASTVisitor::ShadowHandler(clang::VarDecl *vdecl)
 	/*Process descriptor*/
 	{
 		std::string codestr;
-		llvm::raw_string_ostream ss(codestr);
+		llvm::raw_string_ostream codep(codestr);
+		llvm::raw_string_ostream *ss = &codep;
 		clang::SourceRange SR = getPragmaSourceRange(vdecl);
 		llvm::errs()<<"SHADOW"<<dim<<"\n";
-		ss<<"/*\n";
+		if(!vdecl->isLocalVarDecl()){
+		  ss = &epistream;
+		}
+
+		codep<<"/*shadow*/\n";
 		for(int i=0; i < dim; i++){
 		  int min, max;
 		  
@@ -34,12 +39,11 @@ bool MyASTVisitor::ShadowHandler(clang::VarDecl *vdecl)
 		    max = ev.Val.getInt().getSExtValue();
 		  }
 		  
-		  ss<<"xmp_shadow(_XMP_DESC_"<<TD->getName()<<","
+		  (*ss)<<"xmp_shadow(_XMP_DESC_"<<TD->getName()<<","
 		    <<i<<","<<min<<","<<max<<");\n";
 		  
 		}
-		ss<<"*/\n";		
-		rew.ReplaceText(SR,  ss.str().c_str());
+		rew.ReplaceText(SR,  codep.str().c_str());
 	}
 	
 	return true;

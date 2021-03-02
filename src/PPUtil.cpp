@@ -87,6 +87,7 @@ void PPUtil::SetNumericConstant(clang::Token &Tok, const char *number)
 bool PPUtil::ArrayParser(clang::Preprocessor &PP,
 			 TokenList &TL,
 			 TripleList &TPL,
+			 TokenList &ArgVarList,
 			 bool ignoreIdent)
 {
   int v[6];
@@ -100,6 +101,9 @@ bool PPUtil::ArrayParser(clang::Preprocessor &PP,
     if(!Tok.is(clang::tok::l_square)){
       PP.Backtrack();
       break;
+    }else if(PP.isBacktrackEnabled()){
+      /*Plug backtrack leak*/
+      PP.CommitBacktrackedTokens();
     }
     PP.Lex(Tok);
     /* [*] */
@@ -137,10 +141,15 @@ bool PPUtil::ArrayParser(clang::Preprocessor &PP,
     /*[expr(:expr:expr)]*/
     int i = 0;
     for(;;){
-      if(Tok.is(clang::tok::identifier)&& ignoreIdent){
-	/*erasure ident to avoid compile error*/
-	llvm::errs()<<"IgnoreIdent\n";
-	SetNumericConstant(Tok, "0");
+      if(Tok.is(clang::tok::identifier)){
+	if(i == 0){
+	  ArgVarList.push_back(Tok);
+	}
+	if(ignoreIdent)	{
+	  /*erasure ident to avoid compile error*/
+	  llvm::errs()<<"IgnoreIdent\n";
+	  SetNumericConstant(Tok, "0");
+	}
       }
       if(Tok.is(clang::tok::r_square)){
 	v[i] = TL.size();
@@ -225,7 +234,6 @@ bool PPUtil::ArrayParser(clang::Preprocessor &PP,
   }
   return true;
 }
-		       
 void PPUtil::AddVoidCastToken(clang::SmallVector<clang::Token, 1> &TokenList,
 			     clang::Token &myTok)
 {
@@ -311,7 +319,7 @@ bool PPNodeRef::Parse(bool ignoreIdent)
     return false;
   }
 
-  if(!PPUtil::ArrayParser(PP, TL, TPL, ignoreIdent)){
+  if(!PPUtil::ArrayParser(PP, TL, TPL, varList, ignoreIdent)){
     return false;
   }
   ready = true;

@@ -9,7 +9,6 @@
 
 double u[N2][N1];
 #pragma xmp align u[j][i] with t[j][i]
-
 int main(int ac, char** av)
 {
   int n;

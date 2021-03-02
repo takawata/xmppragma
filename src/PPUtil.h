@@ -13,7 +13,7 @@ namespace PPUtil{
   };
   using TripleList = clang::SmallVector<Triple, 1>;
   bool ArrayParser(clang::Preprocessor &PP, TokenList &TL, TripleList &TPL,
-		   bool ignoreIdent);
+		   TokenList &ArgVarList, bool ignoreIdent);
   void AddVoidPtr(clang::Preprocessor &PP,
 		  clang::SmallVector<clang::Token, 1> &TokenList,
 		  clang::Token &nameTok);
@@ -44,6 +44,7 @@ namespace PPUtil{
 class PPNodeRef{
   PPUtil::TripleList TPL;
   PPUtil::TokenList TL;
+  PPUtil::TokenList varList;
   clang::Preprocessor &PP;
   clang::Token nodeTok;
   std::string nodename;
@@ -53,8 +54,12 @@ public:
   PPNodeRef(clang::Preprocessor &P):PP(P),ready(false)
   {
   };
+  bool isValid()
+  {return ready;};
   bool Parse(bool ignoreIdent);
   bool outputDefinition(llvm::SmallVector<clang::Token, 1> &TokenList);
   bool outputReference(clang::Token &Tok);
+  PPUtil::TokenList::iterator varsBegin(){return varList.begin();};
+  PPUtil::TokenList::iterator varsEnd(){return varList.end();};
 };
 #endif

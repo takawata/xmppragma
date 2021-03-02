@@ -10,17 +10,14 @@ void PragmaBcastHandler::HandlePragma(clang::Preprocessor &PP,
     clang::SmallVector<clang::Token,1>  TokenList;
     clang::SmallVector<std::pair<clang::Token, clang::Token>,1> arrays;
     std::string name;
-    clang::SmallVector<clang::Token,1>  ArrayTokenList;
-    TripleList FromTriple;
-    TripleList ToTriple;
     bool hasFrom = false ;
     bool hasTo = false;
     bool hasasync = false;
     clang::Token Tok;
     clang::Token AsyncTok;
     clang::SmallVector<clang::Token, 1> nodeToks;
-    clang::Token From;
-    clang::Token To;
+    PPNodeRef From(PP);
+    PPNodeRef To(PP);
     clang::SourceLocation StartLoc = FirstTok.getLocation();
     clang::SourceLocation EndLoc;
     clang::tok::TokenKind expected;
@@ -43,21 +40,12 @@ void PragmaBcastHandler::HandlePragma(clang::Preprocessor &PP,
 	goto error;
       auto idstr = Tok.getIdentifierInfo()->getName().str();
       if(idstr == "from"){
-	PP.Lex(From);
-	if(!From.is(clang::tok::identifier)){
-	  goto error;
-	}
-	hasFrom= true;
-	ArrayParser(PP, ArrayTokenList, FromTriple, false);
+	hasFrom = true;
+	From.Parse(false);
       }
       if(idstr == "on"){
 	hasTo = true;
-	PP.Lex(From);
-	if(!To.is(clang::tok::identifier)){
-	  goto error;
-	}
-	hasTo= true;
-	ArrayParser(PP, ArrayTokenList, ToTriple, false);
+	To.Parse(false);
       }
       if(idstr == "async"){
 	if(!ParseAsync(PP, AsyncTok))
@@ -65,7 +53,9 @@ void PragmaBcastHandler::HandlePragma(clang::Preprocessor &PP,
 	hasasync = true;
       }
     }
+    EndLoc = Tok.getLocation();
     {
+      llvm::errs()<<"E\n";
       for(auto &varnode : nodeToks){
 	name = "__xmp_bcast"+std::to_string(nodes);
 	nodes++;
@@ -73,6 +63,11 @@ void PragmaBcastHandler::HandlePragma(clang::Preprocessor &PP,
 	AddTokenPtrElem(TokenList, varnode);
 	AddEndBrace(TokenList,EndLoc);
       }
+      auto TokenArray = std::make_unique<clang::Token[]>(TokenList.size());
+      std::copy(TokenList.begin(), TokenList.end(), TokenArray.get());
+      PP.EnterTokenStream(std::move(TokenArray), TokenList.size(),
+			  /*DisableMacroExpansion=*/false,
+			  /*IsReinject=*/false);
     }
     return;
  error:

@@ -14,7 +14,6 @@
 /* ASTを受取るクラス */
 class MyASTConsumer : public clang::ASTConsumer {
   clang::CompilerInstance *cmpi;
-
 public:
   MyASTConsumer(clang::CompilerInstance *ci) : cmpi(ci) {
     auto &PP = ci->getPreprocessor();
@@ -56,6 +55,8 @@ public:
     if (rbuf != nullptr) {
       std::string buf(rbuf->begin(), rbuf->end());
       std::cout << buf;
+      std::cout << visitor.getEpiloge();
+      std::cout <<"\n}"<<std::endl;
     } else {
       std::cerr << "Original code is unchanged" << std::endl;
     }

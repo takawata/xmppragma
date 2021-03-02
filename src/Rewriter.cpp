@@ -1,5 +1,8 @@
 #include "Rewriter.h"
 #include <clang/AST/Expr.h>
+MyASTVisitor::MyASTVisitor(clang::Rewriter &r,clang::ASTContext &a) : rew(r),ast(a),epistream(epiloge) {
+  epistream<<"void __xmp_global_initializer(){";
+}
 
 /* まず、pragmaを置き換えた変数を見つける */
 bool MyASTVisitor::VisitVarDecl(clang::VarDecl *vdecl){
@@ -28,6 +31,9 @@ bool MyASTVisitor::VisitVarDecl(clang::VarDecl *vdecl){
     }
     if(name.find("__xmp_task") == 0){
       return TaskHandler(vdecl);
+    }
+    if(name.find("__xmp_bcast") == 0){
+      return BcastHandler(vdecl);
     }
 
     llvm::errs()<<vdecl->getName()<<"\n";

@@ -8,6 +8,7 @@ void PragmaGmoveHandler::HandlePragma(clang::Preprocessor &PP,
 				      clang::PragmaIntroducer Introducer,
 				      clang::Token &FirstTok){
     clang::SmallVector<clang::Token,1>  TokenList;
+    clang::SmallVector<clang::Token,1>  argVarList;    
     PPUtil::TokenList TL;
     TripleList TPL;
     clang::SourceLocation StartLoc = FirstTok.getLocation();
@@ -54,7 +55,7 @@ void PragmaGmoveHandler::HandlePragma(clang::Preprocessor &PP,
       goto error;
     }
 
-    ArrayParser(PP, TL, LHSTPL, false);
+    ArrayParser(PP, TL, LHSTPL, argVarList, false);
     PP.Lex(Tok);
     if(!Tok.is(clang::tok::equal)){
       goto error;
@@ -62,7 +63,7 @@ void PragmaGmoveHandler::HandlePragma(clang::Preprocessor &PP,
     if(!RHSTok.is(clang::tok::identifier)){
       goto error;
     }
-    ArrayParser(PP, TL, RHSTPL, false);
+    ArrayParser(PP, TL, RHSTPL, argVarList, false);
     {
       AddVar(PP, TokenList, name, StartLoc);
       AddEndBrace(TokenList, EndLoc);

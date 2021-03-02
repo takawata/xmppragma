@@ -145,6 +145,7 @@ void PragmaLoopHandler::HandlePragma(clang::Preprocessor &PP,
     clang::SmallVector<clang::Token,1>  TokenList;
     clang::SmallVector<clang::Token,1> LoopVarList;
     clang::SmallVector<clang::Token,1> ArrayTokenList;
+    PPUtil::TokenList::iterator lbegin, lend;
     PPNodeRef nodeRef(PP);
     std::vector<std::pair<clang::Token,clang::Token>> arrays;
     clang::SourceLocation StartLoc = FirstTok.getLocation();
@@ -160,6 +161,7 @@ void PragmaLoopHandler::HandlePragma(clang::Preprocessor &PP,
     if(Tok.is(clang::tok::l_paren)){
       /*Parse loop var list*/
       hasvarlist = 1;
+
       for(;;){
 	PP.Lex(Tok);
 	if(!Tok.is(expected = clang::tok::identifier)){
@@ -173,6 +175,8 @@ void PragmaLoopHandler::HandlePragma(clang::Preprocessor &PP,
 	  goto error;
 	}
       }
+      lbegin = LoopVarList.begin();
+      lend = LoopVarList.end();
     }
     PP.Lex(Tok);
     /* on */
@@ -187,6 +191,10 @@ void PragmaLoopHandler::HandlePragma(clang::Preprocessor &PP,
       goto error;
     }
     PP.Lex(Tok);
+    if(!hasvarlist){
+      lbegin = nodeRef.varsBegin();
+      lend = nodeRef.varsEnd();
+    }
     /*Reduction */
     if(Tok.is(clang::tok::identifier)){
       if(Tok.getIdentifierInfo()->getName().str() != "reduction"){
@@ -227,7 +235,9 @@ void PragmaLoopHandler::HandlePragma(clang::Preprocessor &PP,
       Tok.setKind(clang::tok::l_brace);
       TokenList.push_back(Tok);
       /*define loop variable decl.*/
-      for(auto &&LV : LoopVarList){
+
+      for(auto it = lbegin; it != lend; it++){
+	auto &&LV = *it;
 	Tok.startToken();
 	Tok.setKind(clang::tok::kw_int);
 	TokenList.push_back(Tok);

@@ -16,6 +16,7 @@ void PragmaReductionHandler::HandlePragma(clang::Preprocessor &PP,
     clang::SourceLocation StartLoc;
     clang::SourceLocation EndLoc;
     bool hason = false;
+    PPNodeRef nodeRef(PP);
     clang::SmallVector<clang::Token, 1> TL;
     std::string name;
     clang::tok::TokenKind expected;
@@ -49,13 +50,14 @@ void PragmaReductionHandler::HandlePragma(clang::Preprocessor &PP,
       goto error;
     }
     hason = true;
-    PP.Lex(TargetTok);
-    if(!Tok.is(clang::tok::identifier)){
-      goto error;
-    }
-    ArrayParser(PP, TL, TPL, false);
+    nodeRef.Parse(false);
+
  end:
     {
+      if(hason){
+	nodeRef.outputDefinition(TokenList);
+	nodeRef.outputReference(TargetTok);
+      }
       AddVar(PP, TokenList, name, StartLoc);
       AddTokenPtrElem(TokenList, nodeTok);
       if(reductionKind<0){

@@ -13,13 +13,16 @@ void PragmaNodesHandler::HandlePragma(clang::Preprocessor &PP,
     clang::SmallVector<clang::Token,1> TokenList;
     std::vector<std::pair<clang::Token,clang::Token>> arrays;
     std::string name;
+
+    PP.EnableBacktrackAtThisPos();
     PP.Lex(nameTok);
     clang::SourceLocation StartLoc = FirstTok.getLocation();
-
     if(!nameTok.isAnyIdentifier()){
-      goto error;
+      PP.Backtrack();
+    }else{
+      AddVoidPtr(PP, TokenList, nameTok);
+      PP.CommitBacktrackedTokens();
     }
-    AddVoidPtr(PP, TokenList, nameTok);
     
     name = std::string("__xmp_node") + std::to_string(nodes);
     nodes++;

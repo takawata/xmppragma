@@ -12,16 +12,13 @@ bool MyASTVisitor::AlignHandler(clang::VarDecl *vdecl)
   dimstmt->dump();
   assert(avdecl);
   assert(tvdecl);
+  auto AType = avdecl->getType();
+
   /*Process Aligned variable*/
   AlignedVars.push_back(avdecl);
   std::string Varname = avdecl->getName();
   std::vector <int> NumElems;
   {
-    auto AType = avdecl->getType();
-    std::string codestr;
-    llvm::raw_string_ostream ss(codestr);
-    clang::PrintingPolicy PP(ast.getLangOpts());
-
     while(1){
       auto caType = llvm::dyn_cast<clang::ConstantArrayType>(AType);
       if(caType == nullptr)
@@ -30,24 +27,31 @@ bool MyASTVisitor::AlignHandler(clang::VarDecl *vdecl)
       llvm::errs()<<caType->getSize().getZExtValue()<<"\n";
       NumElems.push_back(caType->getSize().getZExtValue());
     }
-    clang::SourceRange SR(avdecl->getBeginLoc(), avdecl->getEndLoc());
-    if(AType->isPointerType()){
-      NumElems.push_back(-1);
-      AType.print(ss, PP);
-      ss<<Varname;
-    }else{
-      AType->dump();
-      AType.print(ss, PP);
-      ss<<"* "<<Varname;
-    }
-    rew.ReplaceText(SR,  ss.str().c_str());
   }
   /*Process descriptor*/
   {
     std::string codestr;
+    std::string declcodestr;
     llvm::raw_string_ostream ss(codestr);
+    llvm::raw_string_ostream dss(declcodestr);
+    llvm::raw_string_ostream *declss = &ss;
     clang::SourceRange SR = getPragmaSourceRange(vdecl);
+    clang::PrintingPolicy PP(ast.getLangOpts());
+    clang::SourceRange ASR(avdecl->getBeginLoc(), avdecl->getEndLoc());
+    if(avdecl->getKind() != clang::Decl::ParmVar){
+      rew.ReplaceText(ASR, "/*original vardecl*/");
+    }else{
+      declss = &dss;
+    }
 
+    if(AType->isPointerType()&&!(avdecl->getKind() != clang::Decl::ParmVar)){
+      AType.print(ss, PP);
+      (*declss)<<Varname<<";\n/*X*/";
+    }else{
+      AType->dump();
+      AType.print(ss, PP);
+      (*declss)<<"* "<<Varname<<";/*Y*/\n";
+    }
     ss<<"static void * _XMP_DESC_"<<Varname<<";\n";
     ss<<"/*Template "<<tvdecl->getName()<<" Dimension "<<dim<<"*/\n";
     ss<<"/*Array subscripts:";
