@@ -1,7 +1,7 @@
 #include "Rewriter.h"
 #include <clang/AST/Expr.h>
 MyASTVisitor::MyASTVisitor(clang::Rewriter &r,clang::ASTContext &a) : rew(r),ast(a),epistream(epiloge) {
-  epistream<<"void __xmp_global_initializer(){";
+  epistream<<"void __xmp_global_initializer(){\n";
 }
 
 /* まず、pragmaを置き換えた変数を見つける */
@@ -123,10 +123,9 @@ bool MyASTVisitor::VisitCallExpr(clang::CallExpr *CE)
 	continue;
       }
     }
-    llvm::errs()<<"Aligned value found\n";
     clang::SourceRange ASR(Arg->getBeginLoc(), Arg->getEndLoc());
     std::string varname = VD->getName();
-    rew.ReplaceText(ASR, "_XMP_DESC_"+varname);
+    rew.ReplaceText(ASR, "_XMP_DATA_"+varname);
   }
   return true;
 }
