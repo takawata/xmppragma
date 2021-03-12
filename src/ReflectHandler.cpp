@@ -16,8 +16,7 @@ bool MyASTVisitor::ReflectHandler(clang::VarDecl *vdecl)
 		llvm::raw_string_ostream ss(codestr);
 		clang::SourceRange SR = getPragmaSourceRange(vdecl);
 		
-		ss<<"xmp_reflect(_XMP_DESC_"<<TD->getName()<<","
-		  <<TD->getName()<<");\n";
+		ss<<"_XMP_reflect__(_XMP_DESC_"<<TD->getName()<<");\n";
 		rew.ReplaceText(SR,  ss.str().c_str());
 	}
 	

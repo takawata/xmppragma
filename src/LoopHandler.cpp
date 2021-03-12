@@ -1,62 +1,81 @@
 #include "Rewriter.h"
-class LoopDesc{
-	std::vector <int> LoopCounts;
-	clang::VarDecl *PragmaDecl;
-	clang::VarDecl *NodeDecl;
-	clang::VarDecl *ReductionDecl;
-	std::string reductionFunc;
-	int Loops;
-	clang::Rewriter& rew;
-public:
-	LoopDesc(clang::VarDecl *pdecl, clang::VarDecl *node, int dim, clang::Rewriter &r):PragmaDecl(pdecl),NodeDecl(node),LoopCounts(dim),Loops(dim),rew(r),ReductionDecl(nullptr){};
-	LoopDesc(clang::VarDecl *pdecl, clang::VarDecl *node, int dim, clang::Rewriter &r,int reductionType,clang::VarDecl *rdecl):PragmaDecl(pdecl),NodeDecl(node),LoopCounts(dim),Loops(dim),rew(r),ReductionDecl(rdecl)
+
+LoopDesc::LoopDesc(clang::VarDecl *pdecl, clang::VarDecl *node, int dim, clang::Rewriter &r):PragmaDecl(pdecl),NodeDecl(node),LoopCounts(dim),InitValues(dim),Loops(dim),rew(r),ReductionDecl(nullptr){
+};
+
+LoopDesc::LoopDesc(clang::VarDecl *pdecl, clang::VarDecl *node, int dim, clang::Rewriter &r,int reductionType,clang::VarDecl *rdecl):PragmaDecl(pdecl),NodeDecl(node),LoopCounts(dim),InitValues(dim),Loops(dim),rew(r),ReductionDecl(rdecl)
+{
+	reductionFunc = MyASTVisitor::getReductionFunc(reductionType);
+};
+
+std::string LoopDesc::getReductionInit()
 	{
-		reductionFunc = MyASTVisitor::getReductionFunc(reductionType);
-	};
-	
-	std::string getReduction(){
 		if(!ReductionDecl){
 			return std::string("");
 		}
-		std::string nodeName = NodeDecl->getName();
-		std::string rvName = ReductionDecl->getName();	
-		return  std::string("xmp_loop_reduction_")+reductionFunc+"("+ nodeName + ","+ rvName+");";
+		std::string rvName = ReductionDecl->getName();		
+		return std::string(
+			"if((_XMP_get_execution_node_rank()) != 0)\n") +
+			rvName + "= 0;\n";
 	}
-	void setLoopCount(int x, int pos)
-	{
-		int dim = LoopCounts.size();
-		assert(pos < dim);
-		LoopCounts[pos] = x;
-		Loops --;
-		if(Loops == 0){
-			auto content =
-				llvm::dyn_cast<clang::InitListExpr>
-				(PragmaDecl->getInit());
-			std::string codestr;
-			llvm::raw_string_ostream ss(codestr);
-			clang::SourceRange SR =
-				MyASTVisitor::getPragmaSourceRange
-				(PragmaDecl, rew);
-
-			ss<<"/*Pragma Loop*/\n{\n";
-			NodeDecl->print(ss);
-			ss<<";\n";
-			ss<<"/*Node :"<<NodeDecl->getName()<<"*/\n";
-			for(int i=0; i < dim ; i++){
-				auto loopVar = 
-					MyASTVisitor::getVarDeclFromDescArray(
-						content , i + 2);
-				std::string lvname = loopVar->getName();
-				ss<<"int "<< lvname <<";\n";
-				ss<<"int _xmp_init_"<<lvname<<"= 0;\n";
-				ss<<"int _xmp_step_"<<lvname<<"= 1;\n";
-				ss<<"int _xmp_count"<<lvname<<"= "<<LoopCounts[i]<<";\n";
-			}
-			rew.ReplaceText(SR, ss.str().c_str());
+std::string LoopDesc::getReduction(){
+		if(!ReductionDecl){
+			return std::string("");
 		}
+		std::string rvName = ReductionDecl->getName();
+		clang::QualType rvType = ReductionDecl->getType();
+		std::string typeName = MyASTVisitor::getReductionType(rvType);
+		return  std::string("_XMP_reduce_CLAUSE(") + "&"+ rvName+","+"1,"+typeName+","+reductionFunc+");";
+}
+void LoopDesc::setLoopCount(int x,int y, int pos)
+{
+	int dim = LoopCounts.size();
+	assert(pos < dim);
+	LoopCounts[pos] = x;
+	InitValues[pos] = y;
+	Loops --;
+	if(Loops == 0){
+		auto content =
+			llvm::dyn_cast<clang::InitListExpr>
+			(PragmaDecl->getInit());
+		std::string codestr;
+		llvm::raw_string_ostream ss(codestr);
+		clang::SourceRange SR =
+			MyASTVisitor::getPragmaSourceRange
+			(PragmaDecl, rew);
+		ss<<getReductionInit();
+		ss<<"/*Pragma Loop*/\n{\n";
+		NodeDecl->print(ss);
+		ss<<";\n";
+		ss<<"/*Node :"<<NodeDecl->getName()<<"*/\n";
+		
+		for(int i=0; i < dim ; i++){
+			auto loopVar = 
+				MyASTVisitor::getVarDeclFromDescArray(
+					content , i + 2);
+			std::string lvname = loopVar->getName();
+			std::string initname = "_XMP_loop_init_"+lvname;
+			std::string stepname = "_XMP_loop_step_"+lvname;
+			std::string countname = "_XMP_loop_cond_"+lvname;
+			ss<<"int "<< lvname <<";\n";
+			ss<<"int "<<initname<<"= "<<InitValues[i]<<";\n";
+			ss<<"int "<<stepname<<"= 1;\n";
+			ss<<"int "<<countname<<"= "<<LoopCounts[i]<<";\n";
+			ss<<"xmpc_loop_sched("<<
+				initname<<","<<
+				countname<<","<<
+				stepname<<","<<
+				"&"<<initname<<","<<
+				"&"<<countname<<","<<
+				"&"<<stepname<<", *"<<
+				NodeDecl->getName()<<"[0],"<<
+				dim-i-1<<",413/* _XMP_LOOP_NONE*/,0,0"<<
+				")\n";
+		}
+		rew.ReplaceText(SR, ss.str().c_str());
 	}
-	
-};
+}
+
 bool MyASTVisitor::LoopHandler(clang::VarDecl *vdecl)
 {
 	vdecl->print(llvm::errs());
@@ -77,7 +96,7 @@ bool MyASTVisitor::LoopHandler(clang::VarDecl *vdecl)
 	auto dimstmt = llvm::dyn_cast<clang::IntegerLiteral>(content->getInit(1)
 							     ->IgnoreCasts());
 	int64_t dim = dimstmt->getValue().getSExtValue();
-	LoopDesc *LD;
+	std::shared_ptr<LoopDesc> LD;
 	if(content->getNumInits() ==  dim+4){
 		clang::Expr::EvalResult ev;
 		auto redFuncExpr = content->getInit(dim+2)->IgnoreCasts();
@@ -87,9 +106,9 @@ bool MyASTVisitor::LoopHandler(clang::VarDecl *vdecl)
 			redfunc = ev.Val.getInt().getSExtValue();
 		}
 		llvm::errs()<<"Reduction"<<redfunc<<"\n";
-		LD = new LoopDesc(vdecl, VD, dim, rew, redfunc, redVar);
+		LD = std::make_shared<LoopDesc>(vdecl, VD, dim, rew, redfunc, redVar);
 	}else{
-		LD = new LoopDesc(vdecl, VD, dim, rew);
+		LD = std::make_shared<LoopDesc>(vdecl, VD, dim, rew);
 	}
 	for(int i = 0; i < dim; i++){
 	  auto loopVar = getVarDeclFromDescArray(content, 2+i);
@@ -169,14 +188,14 @@ bool MyASTVisitor::VisitForStmt(clang::ForStmt *FST)
 			}
 		}
 		
-		r->LD->setLoopCount(Count, r->Order);
+		r->LD->setLoopCount(Count, Init, r->Order);
 		std::string loopVarName = V->getName();
 		{
 			auto SL= FST->getLParenLoc();
 			auto EL = FST->getRParenLoc();
 			std::string codestr;
 			llvm::raw_string_ostream ss(codestr);
-			clang::SourceRange SR(SL,EL);			
+			clang::SourceRange SR(SL,EL);
 			ss<<"("<<loopVarName<<" = " << "_xmp_init_"
 			  <<loopVarName<<";";
 			ss<<loopVarName <<" <= " << "_xmp_count_"<<loopVarName <<";";

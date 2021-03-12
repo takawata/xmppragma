@@ -42,9 +42,21 @@ void PragmaTaskHandler::HandlePragma(clang::Preprocessor &PP,
       AddTokenPtrElem(TokenList, nodeTok);
       /**/
       AddEndBrace(TokenList, EndLoc);
-      for(auto &X: TokenList){
-	llvm::errs()<< X.getName()<<" ";
-      }
+      /*Add "if(__xmp_task0)" */
+      
+      Tok.startToken();
+      Tok.setKind(clang::tok::kw_if);
+      TokenList.push_back(Tok);
+      Tok.startToken();
+      Tok.setKind(clang::tok::l_paren);
+      TokenList.push_back(Tok);
+      Tok.setKind(clang::tok::identifier);
+      Tok.setIdentifierInfo(PP.getIdentifierInfo(name.c_str()));
+      TokenList.push_back(Tok);
+      Tok.startToken();
+      Tok.setKind(clang::tok::r_paren);
+      TokenList.push_back(Tok);
+
       auto TokenArray = std::make_unique<clang::Token[]>(TokenList.size());
       std::copy(TokenList.begin(), TokenList.end(), TokenArray.get());
       PP.EnterTokenStream(std::move(TokenArray), TokenList.size(),

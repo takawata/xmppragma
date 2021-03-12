@@ -1,7 +1,7 @@
 #include "Rewriter.h"
 #include <clang/AST/Expr.h>
 MyASTVisitor::MyASTVisitor(clang::Rewriter &r,clang::ASTContext &a) : rew(r),ast(a),epistream(epiloge) {
-  epistream<<"void __xmp_global_initializer(){\n";
+  epistream<<"static void __xmp_global_initializer __attribute((contructor))__(){\n";
 }
 
 /* まず、pragmaを置き換えた変数を見つける */
@@ -107,6 +107,7 @@ bool MyASTVisitor::VisitArraySubscriptExpr(clang::ArraySubscriptExpr *ASE)
   rew.ReplaceText(SR, ss.str().c_str());
   return true;
 }
+
 bool MyASTVisitor::VisitCallExpr(clang::CallExpr *CE)
 {
   auto Args = CE->getArgs();

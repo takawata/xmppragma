@@ -47,7 +47,7 @@ public:
     /* ASTを探索するクラス */
     MyASTVisitor visitor(rew, ast);
     visitor.TraverseAST(ast); /* 探索開始 */
-
+    visitor.AddAllocFuncAtLast();
     /* 対象ファイルのID取得*/
     clang::FileID id = cmpi->getSourceManager().getMainFileID();
     /* 書き換え結果の取得 (ASTVisitorが書き換えたこと前提) */

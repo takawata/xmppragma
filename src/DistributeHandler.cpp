@@ -26,8 +26,7 @@ bool MyASTVisitor::DistributeHandler(clang::VarDecl *vdecl)
 	    initstream = &epistream;
 	  }
 
-	  (*initstream)<<"/*\n";
-	  (*initstream)<<"XMP_init_template_Chunk("<<TD->getName()<<","<<ND->getName() <<")\n";
+	  (*initstream)<<"XMP_init_template_chunk("<<TD->getName()<<","<<ND->getName() <<")\n";
 	  for(int i = 0; i < dim; i++){
 	    auto Mexpr = llvm::dyn_cast<clang::IntegerLiteral>
 	      (content->getInit(i*2+2)->IgnoreCasts());
@@ -35,25 +34,27 @@ bool MyASTVisitor::DistributeHandler(clang::VarDecl *vdecl)
 	    auto Pexpr = content->getInit(i*2+3)->IgnoreCasts();
 	    
 	    (*initstream)<<"XMP_dist_template_";
+	    const char *DistType;
 	    switch(Meth){
 	    case 1:
-	      (*initstream)<<"BLOCK";
+	      DistType = "BLOCK";
 	      break;
 	    case 2:
-	      (*initstream)<<"CYCLIC";
+	      DistType = "CYCLIC";	      
 	      break;
 	    case 3:
-	      (*initstream)<<"WBLOCK";
+	      DistType = "WBLOCK";	      
 	      break;
 	    }
+	    Dists.push_back({TD, i, DistType});
+	    (*initstream)<<DistType;
 	    (*initstream)<<"(";
 	    (*initstream)<<TD->getName();
 	    (*initstream)<<","<<i;
-	    (*initstream)<<",";
-	    Pexpr->printPretty(*initstream, nullptr, PP);
+	    (*initstream)<<","<<i;
+	    //Pexpr->printPretty(*initstream, nullptr, PP);
 	    (*initstream)<<");\n";
 	  }
-	  (*initstream)<<"*/\n";
 	  rew.ReplaceText(SR,  ss.str().c_str());	  
 	}
 

@@ -260,6 +260,7 @@ int PPUtil::getReductionKind(clang::Token Tok)
       case clang::tok::star:
       case clang::tok::amp:
       case clang::tok::pipe:
+      case clang::tok::caret:
       case clang::tok::ampamp:
       case clang::tok::pipepipe:
 	return Tok.getKind();

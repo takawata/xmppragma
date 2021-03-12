@@ -24,13 +24,11 @@ bool MyASTVisitor::TemplateHandler(clang::VarDecl *vdecl)
 	  ss<<"static ";
 	  VD->print(ss);
 	  ss<<";\n";
-	  (*initstream)<<"xmp_template_init_"<<dim<<"(";
-	  (*initstream)<<nname<<",";
+	  (*initstream)<<"_XMP_init_template_FIXED(";
+	  (*initstream)<<"&"<<nname<<","<<dim;
 	  for(int i = 1; i < content->getNumInits(); i++){
 	    if( content->getInit(i)->IgnoreCasts()->EvaluateAsInt(ev, ast)){
-	      (*initstream)<<ev.Val.getInt();
-	      if(i != content->getNumInits() - 1)
-		(*initstream)<<",";
+	      (*initstream)<<",0 ,"<<(ev.Val.getInt()-1);
 	    }else{
 	      llvm::errs()<<"ConvErr"<<"\n";
 	    }

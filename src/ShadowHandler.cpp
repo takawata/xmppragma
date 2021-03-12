@@ -17,6 +17,7 @@ bool MyASTVisitor::ShadowHandler(clang::VarDecl *vdecl)
 	}
 	vdecl->print(llvm::errs());
 	/*Process descriptor*/
+
 	{
 		std::string codestr;
 		llvm::raw_string_ostream codep(codestr);
@@ -26,7 +27,7 @@ bool MyASTVisitor::ShadowHandler(clang::VarDecl *vdecl)
 		if(!vdecl->isLocalVarDecl()){
 		  ss = &epistream;
 		}
-
+		(*ss)<<"_XMP_init_shadow(_XMP_DESC_"<<TD->getName();
 		codep<<"/*shadow*/\n";
 		for(int i=0; i < dim; i++){
 		  int min, max;
@@ -38,10 +39,22 @@ bool MyASTVisitor::ShadowHandler(clang::VarDecl *vdecl)
 		  if(content->getInit(2*i+3)->IgnoreCasts()->EvaluateAsInt(ev, ast)){
 		    max = ev.Val.getInt().getSExtValue();
 		  }
-		  
-		  (*ss)<<"xmp_shadow(_XMP_DESC_"<<TD->getName()<<","
-		    <<i<<","<<min<<","<<max<<");\n";
-		  
+
+		  if(min>0 && max >0){
+			  (*ss)<<",401/*_XMP_N_SHADOW_NORMAL*/,"<<min<<","<<max;
+		  }
+
+		}
+		(*ss)<<");\n";
+		auto it = std::find_if(Allocs.begin(), Allocs.end(),
+				    [TD](auto X)
+				    {return (X.aligndecl == TD);});
+
+		if(it != Allocs.end()){
+			(*ss) << getAllocString(*it);
+			Allocs.erase(it);
+		}else{
+			llvm::errs()<<"XXXXXX";
 		}
 		rew.ReplaceText(SR,  codep.str().c_str());
 	}

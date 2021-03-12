@@ -28,13 +28,6 @@ bool MyASTVisitor::NodeHandler(clang::VarDecl *vdecl)
 
 	  ss<<"/*Dimension"<< dim<<"*/\n";
 	  ss<<"/*Subscripts";
-	  for(int i = 1; i < content->getNumInits(); i++){
-	    if( content->getInit(i)->IgnoreCasts()->EvaluateAsInt(ev, ast)){
-	      ss<<ev.Val.getInt()<<",";
-	    }else{
-	      llvm::errs()<<"ConvErr"<<"\n";
-	    }
-	  }
 	  ss<<"*/\n";
 	  for(int i = 1; i < dim; i++){
 		  ss<<"static int __XMP_NODES_SIZE_"<<nname<<i<<";\n";
@@ -43,9 +36,24 @@ bool MyASTVisitor::NodeHandler(clang::VarDecl *vdecl)
 	  for(int i = 0; i < dim; i++){
 		  ss<<"static int __XMP_NODES_RANK_"<<nname<<i<<";\n";
 	  }
-	  (*initstream)<<"/*";
-	  (*initstream)<<"XMP_init_nodes_DYNAMIC_GLOBAL(&"<<nname<<","<< dim <<");";
-	  (*initstream)<<"*/"<<"\n";
+	  (*initstream)<<"XMP_init_nodes_DYNAMIC_GLOBAL(&"<<nname<<","<< dim <<"";
+	  for(int i = content->getNumInits(); i > 1; i--){
+	    if( content->getInit(i-1)->IgnoreCasts()->EvaluateAsInt(ev, ast)){
+	      (*initstream)<<","<<ev.Val.getInt();
+	      llvm::errs()<<"XXX\n";
+	    }else{
+	      llvm::errs()<<"ConvErr"<<"\n";
+	    }
+	  }
+	  for(int i = 0; i < dim; i++){
+	    (*initstream)<<", &__XMP_NODES_RANK_"<<nname<<i;
+	  }
+	  
+	  for(int i = 1; i < dim; i++){
+	    (*initstream)<<", &__XMP_NODES_SIZE_"<<nname<<i;
+	  }
+
+	  (*initstream)<<");\n";
 	  rew.ReplaceText(SR,  ss.str().c_str());
 	}
 	return true;
