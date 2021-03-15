@@ -6,7 +6,7 @@ MyASTVisitor::MyASTVisitor(clang::Rewriter &r,clang::ASTContext &a) : rew(r),ast
   auto MFID = rew.getSourceMgr().getMainFileID();
   auto SFLOC = rew.getSourceMgr().getLocForStartOfFile(MFID);
   auto FILENAME = rew.getSourceMgr().getFilename(SFLOC);
-  std::filesystem::path p(FILENAME);
+  std::__fs::filesystem::path p(FILENAME);
   epistream <<"int main(int argc, char *argv[])\n";
   epistream <<"{\n xmp_init_all(argc, argv);\n xmpc_main(argc,argv);\n";
   epistream <<"xmp_finalize_all();}\n";  
