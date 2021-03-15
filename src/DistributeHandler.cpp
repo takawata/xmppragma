@@ -26,14 +26,14 @@ bool MyASTVisitor::DistributeHandler(clang::VarDecl *vdecl)
 	    initstream = &epistream;
 	  }
 
-	  (*initstream)<<"XMP_init_template_chunk("<<TD->getName()<<","<<ND->getName() <<")\n";
+	  (*initstream)<<"_XMP_init_template_chunk("<<TD->getName()<<","<<ND->getName() <<");\n";
 	  for(int i = 0; i < dim; i++){
 	    auto Mexpr = llvm::dyn_cast<clang::IntegerLiteral>
 	      (content->getInit(i*2+2)->IgnoreCasts());
 	    int64_t Meth = Mexpr->getValue().getSExtValue();
 	    auto Pexpr = content->getInit(i*2+3)->IgnoreCasts();
 	    
-	    (*initstream)<<"XMP_dist_template_";
+	    (*initstream)<<"_XMP_dist_template_";
 	    const char *DistType;
 	    switch(Meth){
 	    case 1:

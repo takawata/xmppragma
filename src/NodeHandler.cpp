@@ -36,7 +36,7 @@ bool MyASTVisitor::NodeHandler(clang::VarDecl *vdecl)
 	  for(int i = 0; i < dim; i++){
 		  ss<<"static int __XMP_NODES_RANK_"<<nname<<i<<";\n";
 	  }
-	  (*initstream)<<"XMP_init_nodes_DYNAMIC_GLOBAL(&"<<nname<<","<< dim <<"";
+	  (*initstream)<<"_XMP_init_nodes_DYNAMIC_GLOBAL(&"<<nname<<","<< dim <<"";
 	  for(int i = content->getNumInits(); i > 1; i--){
 	    if( content->getInit(i-1)->IgnoreCasts()->EvaluateAsInt(ev, ast)){
 	      (*initstream)<<","<<ev.Val.getInt();

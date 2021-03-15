@@ -1,7 +1,16 @@
 #include "Rewriter.h"
 #include <clang/AST/Expr.h>
+#include <filesystem>
+
 MyASTVisitor::MyASTVisitor(clang::Rewriter &r,clang::ASTContext &a) : rew(r),ast(a),epistream(epiloge) {
-  epistream<<"static void __xmp_global_initializer __attribute((contructor))__(){\n";
+  auto MFID = rew.getSourceMgr().getMainFileID();
+  auto SFLOC = rew.getSourceMgr().getLocForStartOfFile(MFID);
+  auto FILENAME = rew.getSourceMgr().getFilename(SFLOC);
+  std::filesystem::path p(FILENAME);
+  epistream <<"int main(int argc, char *argv[])\n";
+  epistream <<"{\n xmp_init_all(argc, argv);\n xmpc_main(argc,argv);\n";
+  epistream <<"xmp_finalize_all();}\n";  
+  epistream<<"extern void  xmpc_traverse_init_file_"<<p.stem()<<"() {\n";
 }
 
 /* まず、pragmaを置き換えた変数を見つける */
@@ -41,8 +50,11 @@ bool MyASTVisitor::VisitVarDecl(clang::VarDecl *vdecl){
 }
 /* 関数宣言を見つけると呼ばれるコールバック関数 */
 bool MyASTVisitor::VisitFunctionDecl(clang::FunctionDecl *fdecl) {
-  rew.InsertTextBefore(fdecl->getBeginLoc(),
-		       "/* found during AST traversal */\n");
+  if((fdecl->getName().str()=="main")&&fdecl->hasBody()){
+    auto DN = fdecl->getNameInfo();
+    
+    rew.ReplaceText(DN.getSourceRange() , "xmpc_main");
+  }
   return true;
 }
 
@@ -64,7 +76,7 @@ bool MyASTVisitor::VisitArraySubscriptExpr(clang::ArraySubscriptExpr *ASE)
     IdxList.push_back(IdE);
     auto ICE = llvm::dyn_cast<clang::ImplicitCastExpr>(E);
     if(!ICE){
-      llvm::errs()<<"Invalid\n";
+
       return true;
     }
     E= ICE->getSubExpr();

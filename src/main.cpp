@@ -52,6 +52,9 @@ public:
     clang::FileID id = cmpi->getSourceManager().getMainFileID();
     /* 書き換え結果の取得 (ASTVisitorが書き換えたこと前提) */
     const clang::RewriteBuffer *rbuf = rew.getRewriteBufferFor(id);
+    std::cout <<"#include \"xmp_func_decl.h\""<<std::endl;
+    std::cout <<"#include \"xmp_index_macro.h\""<<std::endl;
+    std::cout <<"#include \"xmp_comm_macro.h\""<<std::endl;
     if (rbuf != nullptr) {
       std::string buf(rbuf->begin(), rbuf->end());
       std::cout << buf;

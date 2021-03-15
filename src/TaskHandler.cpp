@@ -85,9 +85,9 @@ bool MyASTVisitor::VisitIfStmt(clang::IfStmt *IST)
 		}
 	}
 
-	bs<<"){\n";
+	bs<<")){\n";
 	as <<"\n_XMP_pop_nodes();\n}\n";
-	as <<"__XMP_exec_task_NODES_FINALIZE("<<taskdesc<<");\n}\n";
+	as <<"_XMP_exec_task_NODES_FINALIZE("<<taskdesc<<");\n}\n";
 	llvm::errs()<<"TASK FOUND\n";
 	auto Body = IST->getThen();
 	auto SR = Body->getSourceRange();

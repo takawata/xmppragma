@@ -19,6 +19,7 @@ bool MyASTVisitor::AlignHandler(clang::VarDecl *vdecl)
   clang::QualType EType;
   
   /*Process Aligned variable*/
+  AlignedVars.push_back(avdecl);
   std::string Varname = avdecl->getName();
   std::vector <int> NumElems;
   {
@@ -64,12 +65,8 @@ bool MyASTVisitor::AlignHandler(clang::VarDecl *vdecl)
     }
     ss<<"static void *"<<Descname<<";\n";
     for(int i = 0; i < dim; i++){
-      ss << "static uint64_t _XMP_GTOL_acc_"<< Varname<<"_"<<std::to_string(i)<<";\n";
+      ss << "static unsigned long long  _XMP_GTOL_acc_"<< Varname<<"_"<<std::to_string(i)<<";\n";
       ss << "static int _XMP_GTOL_temp0_"<< Varname<<"_"<<std::to_string(i)<<";\n";
-    }
-    for(int i = 0; i < dim; i++){
-      
-      ss << "static int _XMP_GTOL_temp0_"<< avdecl->getName()<<"_"<<std::to_string(i)<<";\n";
     }
     (*initss)<<"_XMP_init_array_desc(&"<<Descname<<","<<tvdecl->getName()<<","<<dim<<","<<getReductionType(AType)<<", sizeof(*"<<Dataname<<")";
     for(auto &it: NumElems){
@@ -80,7 +77,7 @@ bool MyASTVisitor::AlignHandler(clang::VarDecl *vdecl)
       auto DI = std::find_if(Dists.begin(), Dists.end(),
 			     [tvdecl, i](auto X){return ((X.tempdecl == tvdecl)&&(X.pos == i));});
       (*initss)<<"_XMP_align_array_"<<DI->type<<"("<<Descname<<",";
-      (*initss)<<std::to_string(i)<<","<<std::to_string(dim-i-1)<<",";
+      (*initss)<<std::to_string(i)<<","<<std::to_string(dim-i-1)<<", 0,";
       (*initss)<<"&_XMP_GTOL_temp0_"<<Varname<<"_"<<std::to_string(i)<<");\n";
     }
     (*initss)<<"_XMP_init_array_comm("<<Descname<<",0 ,0);\n";    
@@ -117,8 +114,8 @@ void MyASTVisitor::AddAllocFuncAtLast()
 std::string MyASTVisitor::getAllocString(AllocInfo &Ai)
 {
   std::string name = Ai.aligndecl->getName();
-  std::string str("_XMP_alloc_array(&XMP_DATA_");
-  str = str +  name + "," + "XMP_DESC_" + name+ ", 1/*iscoarray*/";
+  std::string str("_XMP_alloc_array((void**)&_XMP_DATA_");
+  str = str +  name + "," + "_XMP_DESC_" + name+ ", 1/*iscoarray*/";
 
   for(int i = Ai.dim -1 ; i >= 0; i--){
     str = str + ", &_XMP_GTOL_acc_" + name + "_" + std::to_string(i);

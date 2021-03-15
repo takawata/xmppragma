@@ -15,7 +15,7 @@ std::string LoopDesc::getReductionInit()
 		}
 		std::string rvName = ReductionDecl->getName();		
 		return std::string(
-			"if((_XMP_get_execution_node_rank()) != 0)\n") +
+			"if((_XMP_get_execution_nodes_rank()) != 0)\n") +
 			rvName + "= 0;\n";
 	}
 std::string LoopDesc::getReduction(){
@@ -67,10 +67,10 @@ void LoopDesc::setLoopCount(int x,int y, int pos)
 				stepname<<","<<
 				"&"<<initname<<","<<
 				"&"<<countname<<","<<
-				"&"<<stepname<<", *"<<
+				"&"<<stepname<<", "<<
 				NodeDecl->getName()<<"[0],"<<
-				dim-i-1<<",413/* _XMP_LOOP_NONE*/,0,0"<<
-				")\n";
+				dim-i-1<<",413/* _XMP_LOOP_NONE*/,0,0,0"<<
+				");\n";
 		}
 		rew.ReplaceText(SR, ss.str().c_str());
 	}
@@ -196,10 +196,10 @@ bool MyASTVisitor::VisitForStmt(clang::ForStmt *FST)
 			std::string codestr;
 			llvm::raw_string_ostream ss(codestr);
 			clang::SourceRange SR(SL,EL);
-			ss<<"("<<loopVarName<<" = " << "_xmp_init_"
+			ss<<"("<<loopVarName<<" = " << "_XMP_loop_init_"
 			  <<loopVarName<<";";
-			ss<<loopVarName <<" <= " << "_xmp_count_"<<loopVarName <<";";
-			ss<<loopVarName<< " += " << "_xmp_step_"<< loopVarName<<")";
+			ss<<loopVarName <<" <= " << "_XMP_loop_cond_"<<loopVarName <<";";
+			ss<<loopVarName<< " += " << "_XMP_loop_step_"<< loopVarName<<")";
 
 			rew.ReplaceText(SR, ss.str().c_str());
 		}
