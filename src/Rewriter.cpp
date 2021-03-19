@@ -20,7 +20,7 @@ std::string &MyASTVisitor::getEpiloge(){
     epistream <<" void **p;\n";
     epistream <<" for(p = &__start__xmp_initfunc; p < &__stop__xmp_initfunc;p++)\n";
     epistream <<"{\n";
-    epistream <<"__xmp_initfunc *f = *p;";
+    epistream <<"__xmp_initfunc *f = p;";
     epistream <<" (*f)();\n";
     epistream <<"}\n";
     epistream <<"}\n";
