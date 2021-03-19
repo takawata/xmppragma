@@ -12,7 +12,7 @@ MyASTVisitor::MyASTVisitor(clang::Rewriter &r,clang::ASTContext &a) : rew(r),ast
 }
 std::string &MyASTVisitor::getEpiloge(){
   epistream<<"}";
-  epistream<<"static __xmp_initfunc __xmp_init_func_ptr __attribute__((section(\"_xmp_initfunc\"))) __attribute__((used)) = &xmpc_traverse_init_file;\n";
+  epistream<<"static __xmp_initfunc __xmp_init_func_ptr __attribute__((section(\"_xmp_initfunc\"))) __attribute__((used)) = xmpc_traverse_init_file;\n";
   if(hasmain){
     epistream <<"extern void * __start__xmp_initfunc;\n";
     epistream <<"extern void * __stop__xmp_initfunc;\n";
