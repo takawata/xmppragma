@@ -2,17 +2,37 @@
 #include <clang/AST/Expr.h>
 #include <filesystem>
 
-MyASTVisitor::MyASTVisitor(clang::Rewriter &r,clang::ASTContext &a) : rew(r),ast(a),epistream(epiloge) {
+MyASTVisitor::MyASTVisitor(clang::Rewriter &r,clang::ASTContext &a) : rew(r),ast(a),epistream(epiloge),hasmain(false) {
   auto MFID = rew.getSourceMgr().getMainFileID();
   auto SFLOC = rew.getSourceMgr().getLocForStartOfFile(MFID);
   auto FILENAME = rew.getSourceMgr().getFilename(SFLOC);
   std::__fs::filesystem::path p(FILENAME);
-  epistream <<"int main(int argc, char *argv[])\n";
-  epistream <<"{\n xmp_init_all(argc, argv);\n xmpc_main(argc,argv);\n";
-  epistream <<"xmp_finalize_all();}\n";  
-  epistream<<"extern void  xmpc_traverse_init_file_"<<p.stem()<<"() {\n";
+  epistream<<"typedef void (*__xmp_initfunc)();\n";
+  epistream<<"static void  xmpc_traverse_init_file() {\n";
 }
-
+std::string &MyASTVisitor::getEpiloge(){
+  epistream<<"}";
+  epistream<<"static __xmp_initfunc __xmp_init_func_ptr __attribute__((section(\"_xmp_initfunc\"))) __attribute__((used)) = &xmpc_traverse_init_file;\n";
+  if(hasmain){
+    epistream <<"extern void * __start__xmp_initfunc;\n";
+    epistream <<"extern void * __stop__xmp_initfunc;\n";
+    epistream <<"void xmpc_traverse_init(){";
+    epistream <<" void **p;\n";
+    epistream <<" for(p = &__start__xmp_initfunc; p < &__stop__xmp_initfunc;p++)\n";
+    epistream <<"{\n";
+    epistream <<"__xmp_initfunc *f = *p;";
+    epistream <<" (*f)();\n";
+    epistream <<"}\n";
+    epistream <<"}\n";
+    epistream <<"void xmpc_traverse_finalize(){}\n";
+    epistream <<"int main(int argc, char *argv[])\n";
+    epistream <<"{\n";
+    epistream <<"xmp_init_all();\n";
+    epistream <<"xmpc_main(argc,argv);\n";
+    epistream <<"xmp_finalize_all();\n}\n";
+  }
+  return epistream.str();
+}
 /* まず、pragmaを置き換えた変数を見つける */
 bool MyASTVisitor::VisitVarDecl(clang::VarDecl *vdecl){
     std::string name = vdecl->getName().str();
@@ -52,7 +72,7 @@ bool MyASTVisitor::VisitVarDecl(clang::VarDecl *vdecl){
 bool MyASTVisitor::VisitFunctionDecl(clang::FunctionDecl *fdecl) {
   if((fdecl->getName().str()=="main")&&fdecl->hasBody()){
     auto DN = fdecl->getNameInfo();
-    
+    hasmain = true;
     rew.ReplaceText(DN.getSourceRange() , "xmpc_main");
   }
   return true;

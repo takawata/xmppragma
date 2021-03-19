@@ -59,7 +59,6 @@ public:
       std::string buf(rbuf->begin(), rbuf->end());
       std::cout << buf;
       std::cout << visitor.getEpiloge();
-      std::cout <<"\n}"<<std::endl;
     } else {
       std::cerr << "Original code is unchanged" << std::endl;
     }

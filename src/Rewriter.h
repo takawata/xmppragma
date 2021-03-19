@@ -50,6 +50,7 @@ class MyASTVisitor : public clang::RecursiveASTVisitor<MyASTVisitor> {
 	  int pos;
 	  const char *type;
   };
+  bool hasmain;
   std::vector<DistInfo> Dists;
   clang::ASTContext &ast;
   std::vector<clang::VarDecl*> AlignedVars;
@@ -70,7 +71,7 @@ public:
   static std::string getReductionFunc(int x);
   static std::string getReductionType(clang::QualType T);
   MyASTVisitor(clang::Rewriter &r,clang::ASTContext &a);
-  std::string &getEpiloge(){  return epistream.str();};
+  std::string &getEpiloge();
   void AddAllocFuncAtLast();
   /* まず、pragmaを置き換えた変数を見つける */
   bool VisitVarDecl(clang::VarDecl *vdecl);
