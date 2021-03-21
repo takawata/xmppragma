@@ -54,6 +54,7 @@ class MyASTVisitor : public clang::RecursiveASTVisitor<MyASTVisitor> {
   std::vector<DistInfo> Dists;
   clang::ASTContext &ast;
   std::vector<clang::VarDecl*> AlignedVars;
+  std::vector<std::pair<clang::VarDecl*, clang::VarDecl*> > ShadowVars;
   bool NodeHandler(clang::VarDecl *vdecl);
   bool BcastHandler(clang::VarDecl *vdecl);
   bool AlignHandler(clang::VarDecl *vdecl);

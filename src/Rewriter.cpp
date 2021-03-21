@@ -115,6 +115,13 @@ bool MyASTVisitor::VisitArraySubscriptExpr(clang::ArraySubscriptExpr *ASE)
     DRE->getDecl()->dump();
     return true;
   }
+  auto res = std::find_if(ShadowVars.begin(), ShadowVars.end(),[VD](auto X){
+								 return (X.first == VD); });
+  clang::VarDecl *SVD = nullptr;
+  if(res != ShadowVars.end()){
+    SVD = res->second;
+  }
+
   auto SL = ASE->getBeginLoc();
   auto EL = ASE->getEndLoc();
   auto &SM = rew.getSourceMgr();
@@ -127,8 +134,18 @@ bool MyASTVisitor::VisitArraySubscriptExpr(clang::ArraySubscriptExpr *ASE)
     clang::PrintingPolicy PP(ast.getLangOpts());
 
     for(auto IT = IdxList.begin();;){
+      ss<<"(";
       (*IT)->printPretty(ss, nullptr, PP);
       IT++;
+      ss<<")";
+      if(SVD){
+	auto content = llvm::dyn_cast<clang::InitListExpr>(SVD->getInit());
+	assert(content);
+	auto Minexpr = content->getInit(2*i+2);
+	assert(Minexpr);
+	ss<<"+";
+	Minexpr->IgnoreCasts()->printPretty(ss, nullptr, PP);
+      }
       if(IT == IdxList.end())
 	break;
       ss<<")+_XMP_GTOL_acc_"<<var<<"_"<<i<<"*(";

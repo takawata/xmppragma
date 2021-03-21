@@ -8,6 +8,7 @@ bool MyASTVisitor::ShadowHandler(clang::VarDecl *vdecl)
 	auto content = llvm::dyn_cast<clang::InitListExpr>(vdecl->getInit());
 	auto TD = getVarDeclFromDescArray(content, 0);
 	std::string VarName = TD->getName();
+	ShadowVars.push_back(std::make_pair(TD, vdecl));
 	if(content->getNumInits() < 2){
 	  llvm::errs()<<"Invalid descriptor\n";
 	}
