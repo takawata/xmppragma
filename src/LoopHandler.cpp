@@ -67,7 +67,7 @@ void LoopDesc::setLoopCount(int x,int y, int pos)
 				stepname<<","<<
 				"&"<<initname<<","<<
 				"&"<<countname<<","<<
-				"&"<<stepname<<", "<<
+				"&"<<stepname<<", "<<"*(void**)"<<
 				NodeDecl->getName()<<"[0],"<<
 				dim-i-1<<",413/* _XMP_LOOP_NONE*/,0,0,0"<<
 				");\n";
