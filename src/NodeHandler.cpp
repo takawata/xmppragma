@@ -40,7 +40,11 @@ bool MyASTVisitor::NodeHandler(clang::VarDecl *vdecl)
 	  ss<<"/*Subscripts";
 	  ss<<"*/\n";
 	  for(int i = 0; i < dim; i++){
-	    ss<<"static int __XMP_NODES_SIZE_"<<nname<<(dim-i-1);
+	    ss<<"static ";
+	    if(subscripts[i] != -1){
+	      ss <<"const ";
+	    }
+	    ss<<"int __XMP_NODES_SIZE_"<<nname<<(dim-i-1);
 	    if(subscripts[i] != -1){
 	      ss <<" = " << subscripts[i];
 	    }

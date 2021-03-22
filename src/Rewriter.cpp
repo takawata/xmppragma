@@ -33,6 +33,19 @@ std::string &MyASTVisitor::getEpiloge(){
   }
   return epistream.str();
 }
+
+bool MyASTVisitor::TraverseVarDecl(clang::VarDecl *vdecl)
+{
+  int ret = true;
+  std::string name = vdecl->getName().str();
+  /*Ignore descriptor variables.*/
+  if(name.find("__xmp") != 0){
+    return BASE::TraverseVarDecl(vdecl);
+  }
+  ret = WalkUpFromVarDecl(vdecl);
+
+  return ret;
+}
 /* まず、pragmaを置き換えた変数を見つける */
 bool MyASTVisitor::VisitVarDecl(clang::VarDecl *vdecl){
     std::string name = vdecl->getName().str();
@@ -77,7 +90,33 @@ bool MyASTVisitor::VisitFunctionDecl(clang::FunctionDecl *fdecl) {
   }
   return true;
 }
+bool MyASTVisitor::TraverseArraySubscriptExpr(clang::ArraySubscriptExpr *ASE)
+{
+  clang::Expr *E;
+  clang::DeclRefExpr *DRE;
 
+  for(clang::ArraySubscriptExpr *IT = ASE ; IT;){
+    E = IT->getBase();
+    auto ICE = llvm::dyn_cast<clang::ImplicitCastExpr>(E);
+    if(!ICE){
+      return BASE::TraverseArraySubscriptExpr(ASE);
+    }
+    E= ICE->getSubExpr();
+    IT = llvm::dyn_cast<clang::ArraySubscriptExpr>(E);
+  }
+  if(!(DRE = llvm::dyn_cast<clang::DeclRefExpr>(E))){
+    return BASE::TraverseArraySubscriptExpr(ASE);
+  }
+  auto VD = llvm::dyn_cast<clang::VarDecl>(DRE->getDecl());
+  if(VD){
+    auto res = std::find(AlignedVars.begin(), AlignedVars.end(), VD);
+    if(res == AlignedVars.end()){
+      return BASE::TraverseArraySubscriptExpr(ASE);
+    }
+  }
+
+  return WalkUpFromArraySubscriptExpr(ASE);
+}
 bool MyASTVisitor::VisitArraySubscriptExpr(clang::ArraySubscriptExpr *ASE)
 {
   std::vector<clang::Expr*> IdxList;

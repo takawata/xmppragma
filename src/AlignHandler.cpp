@@ -70,7 +70,7 @@ bool MyASTVisitor::AlignHandler(clang::VarDecl *vdecl)
     }
     (*initss)<<"_XMP_init_array_desc(&"<<Descname<<","<<tvdecl->getName()<<","<<dim<<","<<getReductionType(AType)<<", sizeof(*"<<Dataname<<")";
     for(auto &it: NumElems){
-      (*initss)<<","<<it;
+      (*initss)<<",(int)"<<it;
     }
     (*initss)<<");\n";
     for(int i = 0 ; i < dim ; i++){

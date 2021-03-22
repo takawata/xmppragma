@@ -31,6 +31,7 @@ class MyASTVisitor : public clang::RecursiveASTVisitor<MyASTVisitor> {
   clang::Rewriter &rew;
   std::string epiloge;
   llvm::raw_string_ostream epistream;
+  using BASE = clang::RecursiveASTVisitor<MyASTVisitor>;
   struct LoopInfo{
     clang::VarDecl *loopVar;
     std::shared_ptr<LoopDesc> LD;
@@ -75,11 +76,15 @@ public:
   std::string &getEpiloge();
   void AddAllocFuncAtLast();
   /* まず、pragmaを置き換えた変数を見つける */
+  bool TraverseVarDecl(clang::VarDecl *vdecl);
   bool VisitVarDecl(clang::VarDecl *vdecl);
+  bool TraverseArraySubscriptExpr(clang::ArraySubscriptExpr *ASE);
   bool VisitArraySubscriptExpr(clang::ArraySubscriptExpr *ASE);
   /* 関数宣言を見つけると呼ばれるコールバック関数 */
   bool VisitFunctionDecl(clang::FunctionDecl *fdecl);
   bool VisitForStmt(clang::ForStmt *FST);
+  bool TraverseForStmt(clang::ForStmt *FST);
   bool VisitCallExpr(clang::CallExpr *CST);
+  bool VisitDeclRefExpr(clang::DeclRefExpr *DRE);
   bool VisitIfStmt(clang::IfStmt *IST);
 };

@@ -117,6 +117,48 @@ bool MyASTVisitor::LoopHandler(clang::VarDecl *vdecl)
 	return true;
 }
 
+bool MyASTVisitor::TraverseForStmt(clang::ForStmt *FST)
+{
+	auto CondStmt =  FST->getCond();
+	auto CondVOp = llvm::dyn_cast<clang::BinaryOperator>(CondStmt);
+
+	auto VRef = llvm::dyn_cast<clang::DeclRefExpr>(CondVOp->getLHS()->IgnoreCasts());
+	int ret;
+
+	clang::Expr::EvalResult ev;
+	if(!VRef)
+		return true;
+
+	auto V = llvm::dyn_cast<clang::VarDecl>(VRef->getDecl());
+	if(!V)
+		return BASE::TraverseForStmt(FST);
+	ret = WalkUpFromForStmt(FST);
+	if(!ret)
+		return ret;
+
+	ret = TraverseStmt(FST->getBody());
+
+	return ret;
+}
+
+bool MyASTVisitor::VisitDeclRefExpr(clang::DeclRefExpr *DRE)
+{
+	auto V = DRE->getDecl();
+	auto r = std::find_if(Loops.begin(), Loops.end(),
+			      [V](LoopInfo &it)
+			      { return it.loopVar == V;});
+	if(r == Loops.end())
+		return true;
+
+	std::string codestr;
+	llvm::raw_string_ostream ss(codestr);
+	ss<<V->getName()<<"/*Replace*/";
+	rew.ReplaceText(DRE->getSourceRange(), ss.str());
+	V->getSourceRange().dump(rew.getSourceMgr());
+	llvm::errs()<<"Found Decl"<<V->getName()<<"\n";
+	return true;
+}
+
 bool MyASTVisitor::VisitForStmt(clang::ForStmt *FST)
 {
 	auto CondStmt =  FST->getCond();
