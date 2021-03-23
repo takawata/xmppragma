@@ -27,9 +27,11 @@ std::string &MyASTVisitor::getEpiloge(){
     epistream <<"void xmpc_traverse_finalize(){}\n";
     epistream <<"int main(int argc, char *argv[])\n";
     epistream <<"{\n";
+    epistream <<"int r;\n";
     epistream <<"xmp_init_all();\n";
-    epistream <<"xmpc_main(argc,argv);\n";
-    epistream <<"xmp_finalize_all();\n}\n";
+    epistream <<"r = xmpc_main(argc,argv);\n";
+    epistream <<"xmp_finalize_all();\n";
+    epistream<<" return r;}\n";
   }
   return epistream.str();
 }
