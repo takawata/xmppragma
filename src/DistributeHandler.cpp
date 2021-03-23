@@ -46,7 +46,7 @@ bool MyASTVisitor::DistributeHandler(clang::VarDecl *vdecl)
 	      DistType = "WBLOCK";	      
 	      break;
 	    }
-	    Dists.push_back({TD, i, DistType});
+	    Dists.push_back({TD, ND, i, DistType});
 	    (*initstream)<<DistType;
 	    (*initstream)<<"(";
 	    (*initstream)<<TD->getName();

@@ -144,18 +144,49 @@ bool MyASTVisitor::TraverseForStmt(clang::ForStmt *FST)
 bool MyASTVisitor::VisitDeclRefExpr(clang::DeclRefExpr *DRE)
 {
 	auto V = DRE->getDecl();
-	auto r = std::find_if(Loops.begin(), Loops.end(),
+	auto LI = std::find_if(Loops.begin(), Loops.end(),
 			      [V](LoopInfo &it)
 			      { return it.loopVar == V;});
-	if(r == Loops.end())
+	if(LI == Loops.end())
 		return true;
 
 	std::string codestr;
 	llvm::raw_string_ostream ss(codestr);
-	ss<<V->getName()<<"/*Replace*/";
+	auto LV = LI->loopVar;
+	auto LD = LI->LD;
+	auto ND = LD->NodeDecl;
+	auto Content = llvm::dyn_cast<clang::InitListExpr>(ND->getInit());
+	auto TD = getVarDeclFromDescArray(Content, 0);
+	auto DI = std::find_if(Dists.begin(), Dists.end(),
+			       [TD, LI](auto X){
+				       return ((X.tempdecl == TD)
+					       && (X.pos == LI->Order));
+			       });
+	if(DI == Dists.end()){
+		llvm::errs()<<"DIST NOT FOUND"<<TD->getName()<<","
+			    <<LI->Order<<"\n";
+		exit(-1);
+	}
+	auto TV = std::find_if(TempVars.begin(), TempVars.end(),
+			       [TD](auto X) {return (X.first == TD);});
+	if(TV == TempVars.end()){
+		llvm::errs()<<"TEMP NOT FOUND";
+		exit(-1);
+	}
+	auto TI = llvm::dyn_cast<clang::InitListExpr>(TV->second->getInit());
+	auto dim = TI->getNumInits()-1;
+	auto order = dim - 1 - LI->Order;
+	int tsize;
+	clang::Expr::EvalResult ev;
+	if(TI->getInit(order+1)->IgnoreCasts()->EvaluateAsInt(ev,ast)){
+	  tsize = ev.Val.getInt().getSExtValue();
+	}
+	ss<<"_XMP_M_LTOG_TEMPLATE_"<<DI->type<<"("<<V->getName()<<",";
+	ss<<"0,"<<tsize<<","<<"__XMP_NODES_SIZE_"<<DI->nodedecl->getName()<<order<<",";
+	ss<<"__XMP_NODES_RANK_"<<DI->nodedecl->getName()<<order<<")";
 	rew.ReplaceText(DRE->getSourceRange(), ss.str());
 	V->getSourceRange().dump(rew.getSourceMgr());
-	llvm::errs()<<"Found Decl"<<V->getName()<<"\n";
+
 	return true;
 }
 

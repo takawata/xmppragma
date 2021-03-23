@@ -12,13 +12,13 @@ class MyASTVisitor;
 class LoopDesc{
 	std::vector <int> LoopCounts;
 	std::vector <int> InitValues;
-	clang::VarDecl *PragmaDecl;
-	clang::VarDecl *NodeDecl;
 	clang::VarDecl *ReductionDecl;
 	std::string reductionFunc;
 	int Loops;
 	clang::Rewriter& rew;
 public:
+	clang::VarDecl *PragmaDecl;
+	clang::VarDecl *NodeDecl;
 	LoopDesc(clang::VarDecl *pdecl, clang::VarDecl *node, int dim, clang::Rewriter &r);	
 	LoopDesc(clang::VarDecl *pdecl, clang::VarDecl *node, int dim, clang::Rewriter &r,int reductionType,clang::VarDecl *rdecl);
 	std::string getReductionInit();
@@ -48,6 +48,7 @@ class MyASTVisitor : public clang::RecursiveASTVisitor<MyASTVisitor> {
   std::vector<AllocInfo> Allocs;
   struct DistInfo{
 	  clang::VarDecl *tempdecl;
+	  clang::VarDecl *nodedecl;
 	  int pos;
 	  const char *type;
   };
@@ -56,6 +57,7 @@ class MyASTVisitor : public clang::RecursiveASTVisitor<MyASTVisitor> {
   clang::ASTContext &ast;
   std::vector<clang::VarDecl*> AlignedVars;
   std::vector<std::pair<clang::VarDecl*, clang::VarDecl*> > ShadowVars;
+  std::vector<std::pair<clang::VarDecl*, clang::VarDecl*> > TempVars;
   bool NodeHandler(clang::VarDecl *vdecl);
   bool BcastHandler(clang::VarDecl *vdecl);
   bool AlignHandler(clang::VarDecl *vdecl);

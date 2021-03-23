@@ -8,8 +8,8 @@ bool MyASTVisitor::TemplateHandler(clang::VarDecl *vdecl)
 	assert((content));
 	auto VD = getVarDeclFromDescArray(content, 0);
 	assert(VD);
+	TempVars.push_back(std::make_pair(VD, vdecl));
 
-	VD->print(llvm::errs());
 	std::string nname = VD->getName();
 	int dim = content->getNumInits() - 1;
 	
