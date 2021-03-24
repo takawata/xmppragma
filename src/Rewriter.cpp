@@ -174,7 +174,7 @@ bool MyASTVisitor::VisitArraySubscriptExpr(clang::ArraySubscriptExpr *ASE)
     int i = 0;
     clang::PrintingPolicy PP(ast.getLangOpts());
 
-    for(auto IT = IdxList.rbegin();;){
+    for(auto IT = IdxList.begin();;){
       ss<<"(";
       (*IT)->printPretty(ss, nullptr, PP);
       IT++;
@@ -187,7 +187,7 @@ bool MyASTVisitor::VisitArraySubscriptExpr(clang::ArraySubscriptExpr *ASE)
 	ss<<"+";
 	Minexpr->IgnoreCasts()->printPretty(ss, nullptr, PP);
       }
-      if(IT == IdxList.rend())
+      if(IT == IdxList.end())
 	break;
       ss<<")+_XMP_GTOL_acc_"<<var<<"_"<<i<<"*(";
       i++;
